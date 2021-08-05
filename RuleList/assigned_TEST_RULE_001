@@ -1,0 +1,5 @@
+Accept	*1**1
+Deny	00**1
+Accept	*11*0
+Deny	10*11
+Accept	10101

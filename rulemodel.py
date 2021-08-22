@@ -1,17 +1,56 @@
 import math
 import time
 
-# ルールクラス
+
+#  嘘は嘘であると
+#  見抜けぬ人でないと
+#  (このクラスを使うこと)は難しい
+#　　　　＿＿_＿
+#　　　／へへ　 ＼
+#　　／／⌒⌒＼　 ＼
+#　 / /　　　　ヽ　 ヽ
+#　｜｜ヽ　／⌒ |　　|
+#　 ﾚY-･／　-･- ヽ　 |
+#　　| /　　　　 Ｖ) |
+#　　|(＿つ　 ･　 丿ノ
+#　　|＜三三＞)　/ /
+#　　ヽ　ﾞﾞ　　／ﾚｿ
+#　　　＼从ww／　｜
+#　　　　/)￣　　∧
+#　　　／ﾚヽ　 ／ |＼
+#　　 ｜|　|　｜⌒ |｜
+
+
+
+#***********************************************
+#*                  ルールクラス                 *
+#***********************************************
 class Rule:
-    # *初期化関数
+
+    #====================================
+    #=              初期化               =
+    #====================================
     # evaluate -> 評価値
     # bit_string -> ルールのbit列
     def __init__(self, evaluate, bit_string):
         self.evaluate = evaluate
         self.bit_string = bit_string
         self.count_mask = 0
+        #Gymの環境で使うString型のbit列をint配列へ変換した要素の作成(マスクは2とする)
+        self.bit_string_num = []
+        for i in range(len(bit_string)):
+            if bit_string[i] == "*":
+                self.bit_string_num.append(2)
+            elif bit_string[i] == "0":
+                self.bit_string_num.append(0)
+            else:
+                self.bit_string_num.append(1)
 
-    # *合致するかどうかを確認する関数
+            
+            
+    #====================================
+    #=     合致するかどうか確認する関数      =
+    #====================================
     # 引数 -> パケットのbit列 bit_string
     # 返り値 -> True or False
     def match(self,bit_string):
@@ -22,7 +61,9 @@ class Rule:
                     return False
         return True
 
-    # *重複関係があるかどうか判定する関数
+    #====================================
+    #=         重複を判定する関数          =
+    #====================================
     # 引数 -> 対象ルール
     # 返り値 -> True or False
     def is_overlap(self,rule):
@@ -37,7 +78,9 @@ class Rule:
                 self.count_mask += 1
         return True
 
-    # *対象ルールを被覆しているかどうか判定する関数
+    #====================================
+    #=         被覆を判定する関数          =
+    #====================================
     # 引数 -> 対象ルール
     # 返り値 -> True or False
     def is_cover(self,rule):
@@ -51,7 +94,9 @@ class Rule:
                     
             return True
 
-    # *従属関係があるかどうか判定する関数
+    #====================================
+    #=         従属を判定する関数          =
+    #====================================
     # 引数 -> 対象ルール
     # 返り値 -> True or False
     def is_dependent(self,rule):
@@ -61,7 +106,9 @@ class Rule:
                 return True
         return False
 
-    # *隣接しているかを判定する関数
+    #====================================
+    #=          隣接を判定する関数         =
+    #====================================
     # 引数 -> 対象ルール
     # 返り値 -> True or False
     # *隣接 -> ビット列のどこか1つだけがそれぞれ0と1を示し,他が同じビット列を示していて,評価型が同じ,すなわち結合可能なことを表す
@@ -84,7 +131,9 @@ class Rule:
                 return True
         return False
 
-    # *ルールに合致するパケットを列挙する関数 (計算量2^xにつき非推奨)
+    #====================================
+    #= ルールに合致するパケットを列挙する関数 =
+    #==================================== (計算量2^xにつき非推奨)
     # 引数 -> 対象ルール bit_string
     #     -> 参照開始する箇所 ref_position
     # 返り値 -> 合致するパケットのリスト
@@ -103,7 +152,10 @@ class Rule:
         ret.append(bit_string)
         return ret
 
-    # *重複するパケット集合を表すbit列を算出する関数
+
+    #====================================
+    #= 重複するパケット集合を表すbit列を出力  =
+    #====================================
     # 引数 -> 対象ルール rule
     # 返り値 -> 合致するパケットを表すbit列
     def match_packet_bit_string(self,rule):
@@ -122,31 +174,47 @@ class Rule:
                 ret += self.bit_string[i]
             #print(ret)
         return ret
-
+    
+    #====================================
+    #=             長さ出力              =
+    #====================================
     def __len__(self):
         return len(self.bit_string)
-
+    
+    #====================================
+    #=             要素出力              =
+    #====================================
     def __getitem__(self,key):
         return self.bit_string[key]
 
 
 
-#ルールリストクラス(並べ替えを主に扱う)
+
+#***********************************************
+#*              ルールリストクラス                *
+#***********************************************
+#              (並べ替えを主に扱う)
 class RuleList:
-    # *初期化関数
+    #====================================
+    #=              初期化               =
+    #====================================
     # rulelist -> ルールリスト
     # is_print_match_packet -> __str__で使用
     def __init__(self,is_print_match_packet=False):
         self.rule_list = []
         self.is_print_match_packet=is_print_match_packet
 
+    #====================================
+    #=     ルールを末尾へ追加する関数       =
+    #====================================
     #ルールを追加する関数
     # 引数 -> ルール
     def append(self, rule):
         self.rule_list.append(rule)
 
-
-    # パケット分類を行う関数
+    #====================================
+    #=        パケット分類を行う関数        =
+    #====================================
     # 返り値 -> 遅延の合計値
     def filter(self,packet_list,is_print_position=False):
         #遅延の合計値
@@ -195,19 +263,32 @@ class RuleList:
                 match_default_rule_num += 1
             delay_all += delay
 
-        print("合致パケットの分布:",match_number)
-        print("デフォルトルール合致数:",match_default_rule_num)
+        #print("合致パケットの分布:",match_number)
+        #print("デフォルトルール合致数:",match_default_rule_num)
 
         return (delay_all,match_list)
+
+    #====================================
+    #=           各種アクション           =
+    #====================================
     
     # アクション Move
-    # 引数 -> current_pos 移動させるルールの添字番号
+    # 引数 -> rule_pos 移動させるルールの添字番号
     #     -> destination 移動先の添字番号
     # 返り値 -> 成功したかどうか (True or False)
     # destinationにあるルールを押し下げ，その位置にルールを配置する．従属関係を保つことが前提．
     def action_move(self,rule_pos,destination):
         x = self.rule_list[rule_pos]
+
+        for i in range(destination,rule_pos):
+            #print("%d %d"%(destination,i))
+            if self.rule_list[rule_pos].is_dependent(self.rule_list[i]):
+                #print("従属関係が破壊されました")
+                return False
+        
+        
         del self.rule_list[rule_pos]
+        
         if rule_pos < destination:
             self.rule_list.insert(destination-1,x)
         else:
@@ -253,103 +334,6 @@ class RuleList:
     # 返り値 -> なし
     # 重複／従属関係を除去する，
     # 重複パケットを表示 -> 下位ルールの重複部分を削除
-    """
-    def deoverlap(self,rule1_pos,rule2_pos):
-        assert self.rule_list[rule1_pos].is_overlap(self.rule_list[rule2_pos]),"重複関係にありません．"
-        assert rule1_pos <= rule2_pos,"rule1の位置 > rule2の位置 となるように指定してください，"
-        #重複しているパケットを構築
-        overlap_bit_string = self.rule_list[rule1_pos].match_packet_bit_string(self.rule_list[rule2_pos])
-        cutted_rule_list = []
-        evaluating_rule = self.rule_list[rule2_pos].bit_string
-        #print("EVALUATE_RULE IS [%s]" % evaluating_rule)
-        #print("OVERLAP RULE IS [%s]" % overlap_bit_string)
-        start = 0
-        end = False
-        no_mask = True
-        ret = ""
-        #分割したルールリストを作れるまでループ(ループ回数はビットマスクの数に等しいはず)
-        while not end:
-            previous_mask_pos = -1
-            #print("EVAL RULE IS %s" % evaluating_rule)
-            for i in range(start,len(self.rule_list[rule1_pos].bit_string)):
-                #bitが異なる場合(重複パケット集合との比較なので，マスクと0 or 1になるはず)
-                #print(overlap_bit_string + "\t" + evaluating_rule + "\t" + ret)
-                if overlap_bit_string[i] != evaluating_rule[i]:
-                    #1つ目のマスクの場合
-                    if previous_mask_pos == -1:
-                        if no_mask:
-                            no_mask = False
-                        previous_mask_pos = i
-                        ret += "@"
-                    else: #2つ目のマスクがあった場合
-                        #1つ目のマスクがあった場所のbitを重複パケットと異なるものにする
-                        if overlap_bit_string[previous_mask_pos] == "0":
-                            ret = ret[:(self.bind(previous_mask_pos,len(overlap_bit_string)))] + "1" + ret[(self.bind(previous_mask_pos+1,len(overlap_bit_string))):]
-                        else:
-                            ret = ret[:(self.bind(previous_mask_pos,len(overlap_bit_string)))] + "0" + ret[(self.bind(previous_mask_pos+1,len(overlap_bit_string))):]
-                        #残りを分割前ルールからそのまま写す
-                        ret += evaluating_rule[i:]
-                        #print("ONE \t " + ret)
-                        #この状態のルールを分割ルールリストへ追加
-                        cutted_rule_list.append(ret)
-                        #1つ目のマスクがあった場所のbitを重複パケットと同じものにする
-                        if overlap_bit_string[previous_mask_pos] == "0":
-                            ret = ret[:(self.bind(previous_mask_pos,len(overlap_bit_string)))] + "0" + ret[(self.bind(previous_mask_pos+1,len(overlap_bit_string))):]
-                        else:
-                            ret = ret[:(self.bind(previous_mask_pos,len(overlap_bit_string)))] + "1" + ret[(self.bind(previous_mask_pos+1,len(overlap_bit_string))):]
-                        #評価ルールを更新
-                        #print("TWO \t" + ret)
-                        evaluating_rule = ret
-                        #2つ目のマスクを次の比較開始地点とする
-                        start = i
-
-                        ret = ret[:i]
-                        #print("START IS %d" % i)
-                        #forループを抜ける
-                        break
-                else: #bit列が同じ場合はそのまま写す
-                    ret += overlap_bit_string[i]
-                    #print("ADDED %s" % ret)
-            else: #forループが正常終了したならwhileループを終える処理に入る
-                end = True
-            #print(cutted_rule_list)
-                
-            #forを正常に抜ける場合 -> マスクが1つしかないルールを評価していて終端に達した or マスクの無いルール -> 重みが0のルール
-            #前者の場合1つ目のマスクがあった場所のbitを重複パケットと異なるものにする
-            if end:
-                if not no_mask:
-                    #print("END OF LOOP %d" % previous_mask_pos)
-
-                    #print(overlap_bit_string + "\t" + evaluating_rule + "\t" + ret)
-                    if overlap_bit_string[previous_mask_pos] == "0":
-                        ret = ret[:(self.bind(previous_mask_pos,len(overlap_bit_string)))] + "1" + ret[(self.bind(previous_mask_pos+1,len(overlap_bit_string))):]
-                    else:
-                        ret = ret[:(self.bind(previous_mask_pos,len(overlap_bit_string)))] + "0" + ret[(self.bind(previous_mask_pos+1,len(overlap_bit_string))):]
-                    #この状態のルールを分割ルールリストへ追加
-                    cutted_rule_list.append(ret)
-                    #whileを抜ける
-                    break
-                #後者の場合は単純に削除できるので分割ルールリストは空のまま
-                    
-        
-        print("DEOVERLAPED rule[%d]{%s} AND rule[%d]{%s}" % (rule1_pos,self.rule_list[rule1_pos].bit_string,rule2_pos,self.rule_list[rule2_pos].bit_string))
-
-        print("['" + self.rule_list[rule2_pos].bit_string + "'] -> ",end="")
-        print(cutted_rule_list)
-        
-        evaluate = self.rule_list[rule2_pos].evaluate
-        
-        del self.rule_list[rule2_pos]
-        for x in cutted_rule_list:
-            ins_rule = Rule(evaluate,x)
-            for j in range(rule2_pos-1):
-                if self.rule_list[j].is_cover(ins_rule):
-                    break
-            else:
-                self.rule_list.insert(rule2_pos,ins_rule)
-        
-        #print(self)
-    """
     def deoverlap(self,rule1_pos,rule2_pos,target_list,overlap_rule_list):
         #重複しているパケットを構築
         overlap_bit_string = target_list[rule2_pos].match_packet_bit_string(overlap_rule_list[rule1_pos])
@@ -450,16 +434,36 @@ class RuleList:
         else:
             #print(i)
             return i
-        
 
+    #====================================
+    #=      ルールの重みを計算する関数      = （未実装）
+    #====================================
+    #       (パケットの頻度は一様と仮定)
+    def compute_weight(self,pos):
+        return
     
+    #====================================
+    #=   一様分布の場合の遅延を計算する関数   =（未実装）
+    #====================================
+    def compute_delay_average(self):
+        return        
+    
+    #====================================
+    #=             長さ出力              =
+    #====================================
     def __len__(self):
         return len(self.rule_list)
 
+    #====================================
+    #=             要素取得              =
+    #====================================
     def __getitem__(self,key):
         return self.rule_list[key]
 
-    #ルールリストをprintする関数
+    #====================================
+    #=       ルールリストのprint処理       =
+    #====================================
+
     # is_print_match_packet -> 各ルールに合致するパケットのリストを出力するか(非推奨)
     def __str__(self):
         print("[ ][ ]ルールリスト[ ][ ]")
@@ -491,26 +495,16 @@ class RuleList:
                         print("ルール[%d]とルール[%d]は被覆関係" % (i , j))
                     else:
                         print("ルール[%d]とルール[%d]は重複関係\t%d" % (i , j,count_mask))
-        print("OVERLAP_SCORE = %d" % overlap_score)
-        print("SUPER_SCORE = %d" % super_score)
-        print("MEAN = %s" % (super_score / overlap_score))
+        if overlap_score != 0:
+            print("OVERLAP_SCORE = %d" % overlap_score)
+            print("SUPER_SCORE = %d" % super_score)
+            print("MEAN = %s" % (super_score / overlap_score))
         return ""
-    """
-    def deoverlap_all(self):
-        length_of_list = len(self)
-        i = 0
-        while i < length_of_list:
-            j = i+1
-            while j < length_of_list:
-                length_of_list = len(self)
-                if self[i].is_overlap(self[j]):
-                    self.deoverlap(i,j)
-                    print("%d | %d" % (i,len(self)))
-                    j -= 1
-                #print("i = %d | j = %d" % (i,j))
-                j += 1
-            i += 1
-    """
+
+    #====================================
+    #=       重複関係を全除去する関数       =
+    #====================================
+
     def deoverlap_all(self):
         #逆順に調査
         for i in reversed(range(len(self.rule_list))):
@@ -538,3 +532,4 @@ class RuleList:
             del self.rule_list[i]
             for x in target_list:
                 self.rule_list.insert(i,x)
+

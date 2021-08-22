@@ -43,7 +43,7 @@ class rulemodel_env(gym.core.Env):
         self.stay_num = 0
         self.before_delay = 0
 
-        self.max_reward = 0
+        self.max_reward = -999999999
         self.episode_reward = 0
         
         #現在実装済みのアクションの数 (STAY、MOVEのふたつ)
@@ -113,6 +113,7 @@ class rulemodel_env(gym.core.Env):
 
         #変数初期化
         reward = 0
+        done = False
         #print(action)
 
         # actionの値をタプル型へ変換
@@ -130,8 +131,9 @@ class rulemodel_env(gym.core.Env):
         # $=================$ アクション STAY $=================$
         # -> 何もせず待機（ただし報酬-1）
         if act[0] == 0:
-            reward -= 1
-            self.stay_num += 1
+            done = True
+            #reward -= 1
+            #self.stay_num += 1
         # $---------------------------------------------------$
 
         # $=================$ アクション MOVE $=================$
@@ -150,16 +152,17 @@ class rulemodel_env(gym.core.Env):
                 success = self.rulelist.action_move(act[2],act[1])
 
             # 報酬計算
+            
             if success:
                 reward += self.compute_reward()
             else:
                 reward -= 10
         # $---------------------------------------------------$
 
+        reward -= 1
 
 
         # 終了判定
-        done = False
         if self.stay_num >= self.max_stay:
             done = True
         if self.steps >= self.max_steps:
@@ -167,12 +170,12 @@ class rulemodel_env(gym.core.Env):
         
         self.steps += 1
         self.episode_reward += reward
-
+        
         # 終了時に報酬の最高値を更新した場合、その際のルールリストを出力
         if done and self.episode_reward > self.max_reward:
             self.max_reward = self.episode_reward
             print("\nNEW_MAX_REWARD -->> %d"%(self.max_reward))
-            #print(self.rulelist)
+            print(self.rulelist)
             print("遅延 => ",end="")
             print(self.rulelist.filter(self.packetlist)[0])
         

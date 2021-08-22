@@ -131,7 +131,7 @@ if __name__ == "__main__":
         policy=policy
     )
     #DQNAgentのコンパイル
-    dqn.compile(keras.optimizers.Adam(lr=1e-8),metrics=['mae'])
+    dqn.compile(keras.optimizers.Adam(lr=1e-4),metrics=['mae'])
 
     #学習開始
     history = dqn.fit(env,nb_steps=50000,visualize=False, verbose=1)
@@ -141,6 +141,8 @@ if __name__ == "__main__":
 
     #グラフ化
     plt.plot(history.history['nb_episode_steps'], label='nb_episode_steps')
+    plt.legend()
+    plt.show()
     plt.plot(history.history['episode_reward'], label='episode_reward')
     plt.legend()
     plt.show()

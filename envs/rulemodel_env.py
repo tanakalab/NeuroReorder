@@ -46,7 +46,7 @@ class rulemodel_env(gym.core.Env):
         self.max_reward = -999999999
         self.episode_reward = 0
 
-        self.initial_reward = self.rulelist.filter(self.packetlist)[0] * -1
+        self.initial_delay = self.rulelist.filter(self.packetlist)[0] * -1
 
         
         #現在実装済みのアクションの数 (STAY、MOVEのふたつ)
@@ -101,10 +101,13 @@ class rulemodel_env(gym.core.Env):
         self.steps = 0
         self.stay_num = 0
         self.episode_reward = 0
-        self.rulelist = self.base_rulelist
-        self.episode_reward = self.initial_reward
-        
-        #self.before_delay = self.rulelist.filter(self.packetlist)[0]
+        self.episode_reward = self.initial_delay
+
+        self.rulelist = RuleList()
+        for i in range(len(self.base_rulelist)):
+            self.rulelist.append(self.base_rulelist[i])
+        #print(self.rulelist)
+        #self.before_delay = self.initial_delay
         
         return self._transform_rulelist_to_state()
         
@@ -118,6 +121,7 @@ class rulemodel_env(gym.core.Env):
         #変数初期化
         reward = 0
         done = False
+        self.steps += 1
         #print(action)
 
         # actionの値をタプル型へ変換
@@ -127,6 +131,9 @@ class rulemodel_env(gym.core.Env):
         action = action // self.rulelist_len
         dst = action
 
+        if self.steps == 1:
+            action = 1
+        
         act = (typ,src,dst)
 
         #print(act)
@@ -136,6 +143,7 @@ class rulemodel_env(gym.core.Env):
         # -> 何もせず待機（ただし報酬-1）
         if act[0] == 0:
             done = True
+            #self.episode_reward -= self.max_steps / self.steps
             #reward -= 1
             #self.stay_num += 1
         # $---------------------------------------------------$
@@ -163,29 +171,32 @@ class rulemodel_env(gym.core.Env):
                 #reward += self.compute_reward()
             else:
                 pass
-                #reward -= 10
+            #    reward -= 10
         # $---------------------------------------------------$
 
-        self.episode_reward -= 1
-
-
         # 終了判定
-        if self.stay_num >= self.max_stay:
-            done = True
+        #if self.stay_num >= self.max_stay:
+        #    done = True
         if self.steps >= self.max_steps:
             done = True
+
+        reward -= 1
+        self.episode_reward -= 1
         
-        self.steps += 1
         if done:
-            self.episode_reward += self.compute_reward()
-        
-        # 終了時に報酬の最高値を更新した場合、その際のルールリストを出力
-        if done and self.episode_reward > self.max_reward:
-            self.max_reward = self.episode_reward
-            print("\nNEW_MAX_REWARD -->> %d"%(self.max_reward))
-            print(self.rulelist)
-            print("遅延 => ",end="")
-            print(self.rulelist.filter(self.packetlist)[0])
+            delay = self.compute_reward()
+            self.episode_reward = delay
+            reward = self.episode_reward
+            #print(self.rulelist)
+            print("\n|%7d\t|%7d\t|%7d\033[1A"%(self.steps,delay,self.episode_reward),end="")
+
+            # 終了時に報酬の最高値を更新した場合、その際のルールリストを出力
+            if self.episode_reward > self.max_reward:
+                self.max_reward = reward
+                print("\nNEW_MAX_REWARD -->> %d"%(self.max_reward))
+                #print(self.rulelist)
+                print("遅延 => ",end="")
+                print(self.rulelist.filter(self.packetlist)[0])
         
         
         return self._transform_rulelist_to_state(),reward,done,{}

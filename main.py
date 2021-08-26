@@ -12,7 +12,8 @@ import gym
 from gym.envs.registration import register
 from tensorflow import keras
 from rl.agents.dqn import DQNAgent
-from rl.policy import BoltzmannQPolicy
+from rl.policy import LinearAnnealedPolicy
+from rl.policy import EpsGreedyQPolicy
 from rl.memory import SequentialMemory
 
 #グラフ出力
@@ -56,6 +57,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     # -- ルールリストを形成 --
     rule_list = RuleList()
+
+    max_all_steps = 20000
+    max_steps = 200
+    
     
     with open(args.rules,mode="r") as rulelist_file:
         while rulelist_file:
@@ -95,7 +100,7 @@ if __name__ == "__main__":
         kwargs={
             'rulelist':rule_list,
             'packetlist':packet_list,
-            'max_steps':200,
+            'max_steps':max_steps,
             'max_stay':10
         },
     )
@@ -119,25 +124,31 @@ if __name__ == "__main__":
 
     model.summary()
     #経験蓄積メモリの定義
-    memory = SequentialMemory(limit=50000, window_length=1)
+    memory = SequentialMemory(limit=1000, window_length=1)
     #ポリシの選択
-    policy = BoltzmannQPolicy()
+    #policy = EpsGreedyQPolicy(eps=0.05)
+    policy = LinearAnnealedPolicy(EpsGreedyQPolicy(),attr='eps',value_max=1.,value_min=.1,value_test=.05,nb_steps=max_all_steps/5)
     #DQNAgent作成
     dqn = DQNAgent(
         model=model,
         nb_actions=nb_actions,
         memory=memory,
+        gamma=.95,
+        nb_steps_warmup=100,
+        batch_size=32,
+        train_interval=5,
         target_model_update=1e-2,
         policy=policy
     )
     #DQNAgentのコンパイル
-    dqn.compile(keras.optimizers.Adam(lr=1e-4),metrics=['mae'])
+    dqn.compile(keras.optimizers.Adam(lr=1e-3),metrics=['mae'])
 
+    
     #学習開始
-    history = dqn.fit(env,nb_steps=50000,visualize=False, verbose=1)
+    history = dqn.fit(env,nb_steps=max_all_steps,visualize=False, verbose=1,log_interval=max_all_steps/10,nb_max_episode_steps=max_steps)
 
     #学習した重みを保存
-    dqn.save_weights('result.hdf5')
+    dqn.save_weights('result.hdf5',overwrite=True)
 
     #グラフ化
     plt.plot(history.history['nb_episode_steps'], label='nb_episode_steps')
@@ -146,7 +157,6 @@ if __name__ == "__main__":
     plt.plot(history.history['episode_reward'], label='episode_reward')
     plt.legend()
     plt.show()
-    
 
     
     """

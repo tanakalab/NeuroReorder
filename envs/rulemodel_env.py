@@ -45,10 +45,13 @@ class rulemodel_env(gym.core.Env):
 
         self.max_reward = -999999999
         self.episode_reward = 0
+<<<<<<< HEAD
 
 
         self.initial_reward = self.rulelist.filter(self.packetlist)[0] * -1
 
+=======
+>>>>>>> 3a6764164ba4e5f521ff455443e2650a652854cc
         
         #現在実装済みのアクションの数 (STAY、MOVEのふたつ)
         self.implemented_action_num = 2
@@ -103,8 +106,13 @@ class rulemodel_env(gym.core.Env):
         self.stay_num = 0
         self.episode_reward = 0
         self.rulelist = self.base_rulelist
+<<<<<<< HEAD
 
         self.episode_reward = self.initial_reward
+=======
+        
+        self.before_delay = self.rulelist.filter(self.packetlist)[0]
+>>>>>>> 3a6764164ba4e5f521ff455443e2650a652854cc
         
         return self._transform_rulelist_to_state()
         
@@ -147,8 +155,12 @@ class rulemodel_env(gym.core.Env):
             success = False
             # 同値はエラーとして罰を与える
             if act[1] == act[2]:
+<<<<<<< HEAD
                 pass
                 #reward -= 10
+=======
+                reward -= 10
+>>>>>>> 3a6764164ba4e5f521ff455443e2650a652854cc
                 
             # 大小関係を意識しつつMOVEを実行
             elif act[1] > act[2]:
@@ -159,6 +171,7 @@ class rulemodel_env(gym.core.Env):
             # 報酬計算
             
             if success:
+<<<<<<< HEAD
                 pass
                 #reward += self.compute_reward()
             else:
@@ -167,6 +180,14 @@ class rulemodel_env(gym.core.Env):
         # $---------------------------------------------------$
 
         self.episode_reward -= 1
+=======
+                reward += self.compute_reward()
+            else:
+                reward -= 10
+        # $---------------------------------------------------$
+
+        reward -= 1
+>>>>>>> 3a6764164ba4e5f521ff455443e2650a652854cc
 
 
         # 終了判定
@@ -176,8 +197,12 @@ class rulemodel_env(gym.core.Env):
             done = True
         
         self.steps += 1
+<<<<<<< HEAD
         if done:
             self.episode_reward += self.compute_reward()
+=======
+        self.episode_reward += reward
+>>>>>>> 3a6764164ba4e5f521ff455443e2650a652854cc
         
         # 終了時に報酬の最高値を更新した場合、その際のルールリストを出力
         if done and self.episode_reward > self.max_reward:
@@ -224,7 +249,11 @@ class rulemodel_env(gym.core.Env):
         ret = self.before_delay - delay
         self.before_delay = delay
         
+<<<<<<< HEAD
         return delay * -1
+=======
+        return ret
+>>>>>>> 3a6764164ba4e5f521ff455443e2650a652854cc
     
     
     #====================================

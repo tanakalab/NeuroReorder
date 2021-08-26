@@ -31,6 +31,7 @@ class rulemodel_env(gym.core.Env):
     #====================================
     #=            クラス初期化            =
     #====================================
+<<<<<<< HEAD
     def __init__(self,rulelist,packetlist,max_steps,max_stay):
         # パラメータを設定
         self.base_rulelist = rulelist
@@ -38,14 +39,26 @@ class rulemodel_env(gym.core.Env):
         self.packetlist = packetlist
         self.max_steps = max_steps
         self.max_stay = max_stay
+=======
+    def __init__(self):
+        # 変数を設定
+        self.rulelist = None
+        self.packetlist = None
+        self.max_steps = None
+        self.max_stay = None
+
+>>>>>>> 3a6764164ba4e5f521ff455443e2650a652854cc
         
         self.steps = 0
         self.stay_num = 0
         self.before_delay = 0
 
+<<<<<<< HEAD
         self.max_reward = -999999999
         self.episode_reward = 0
         
+=======
+>>>>>>> 3a6764164ba4e5f521ff455443e2650a652854cc
         #現在実装済みのアクションの数 (STAY、MOVEのふたつ)
         self.implemented_action_num = 2
         
@@ -67,6 +80,7 @@ class rulemodel_env(gym.core.Env):
                 self.rulelist_len - 1,
                 self.rulelist_len - 1,
             ],
+<<<<<<< HEAD
             dtype=np.int16,)
 
         #行動空間の大きさ (NNの構築で使用)
@@ -74,6 +88,9 @@ class rulemodel_env(gym.core.Env):
 
 
 
+=======
+            dtype=np.int16,)        
+>>>>>>> 3a6764164ba4e5f521ff455443e2650a652854cc
         
         self.action_space = gym.spaces.Box(
             low=0,
@@ -90,16 +107,37 @@ class rulemodel_env(gym.core.Env):
             high=3,
             shape=(self.rulelist_len,self.bit_string_len),
             dtype=np.int16)
+<<<<<<< HEAD
+=======
+
+
+    #====================================
+    #=              初期化２             =
+    #====================================
+    def set_status(self,rulelist,packetlist,max_steps,max_stay):
+    
+        self.rulelist = rulelist
+        self.packetlist = packetlist
+        self.max_steps = max_steps
+        self.max_stay = max_stay
+>>>>>>> 3a6764164ba4e5f521ff455443e2650a652854cc
         
     #====================================
     #=             環境初期化             =
     #====================================
     def _reset(self):
+<<<<<<< HEAD
         self.steps = 0
         self.stay_num = 0
         self.episode_reward = 0
         self.rulelist = self.base_rulelist
         
+=======
+
+        self.step_num = 0
+        self.stay_num = 0
+
+>>>>>>> 3a6764164ba4e5f521ff455443e2650a652854cc
         self.before_delay = self.rulelist.filter(self.packetlist)[0]
         
         return self._transform_rulelist_to_state()
@@ -113,6 +151,7 @@ class rulemodel_env(gym.core.Env):
 
         #変数初期化
         reward = 0
+<<<<<<< HEAD
         done = False
         #print(action)
 
@@ -134,10 +173,21 @@ class rulemodel_env(gym.core.Env):
             done = True
             #reward -= 1
             #self.stay_num += 1
+=======
+
+        # action [i,j,k] アクションを実行
+        
+        # $=================$ アクション STAY $=================$
+        # -> 何もせず待機（ただし報酬-1）
+        if action[0] == 0:
+            reward -= 1
+            self.stay_num += 1
+>>>>>>> 3a6764164ba4e5f521ff455443e2650a652854cc
         # $---------------------------------------------------$
 
         # $=================$ アクション MOVE $=================$
         # -> ルールjをルールkの位置へ移動（失敗した場合は報酬-10して状態維持
+<<<<<<< HEAD
         elif act[0] == 1:
 
             success = False
@@ -153,18 +203,38 @@ class rulemodel_env(gym.core.Env):
 
             # 報酬計算
             
+=======
+        elif action[0] == 1:
+
+            success = False
+            # 同値はエラーとして罰を与える
+            if action[1] == action[2]:
+                reward -= 10
+                
+            # 大小関係を意識しつつMOVEを実行
+            elif action[1] > action[2]:
+                success = self.rulelist.action_move(action[1],action[2])
+            else:
+                success = self.rulelist.action_move(action[2],action[1])
+
+            # 報酬計算
+>>>>>>> 3a6764164ba4e5f521ff455443e2650a652854cc
             if success:
                 reward += self.compute_reward()
             else:
                 reward -= 10
         # $---------------------------------------------------$
 
+<<<<<<< HEAD
         reward -= 1
+=======
+>>>>>>> 3a6764164ba4e5f521ff455443e2650a652854cc
 
 
         # 終了判定
         if self.stay_num >= self.max_stay:
             done = True
+<<<<<<< HEAD
         if self.steps >= self.max_steps:
             done = True
         
@@ -179,6 +249,12 @@ class rulemodel_env(gym.core.Env):
             print("遅延 => ",end="")
             print(self.rulelist.filter(self.packetlist)[0])
         
+=======
+        elif self.steps >= self.max_steps:
+            done = True
+        else:
+            done = False
+>>>>>>> 3a6764164ba4e5f521ff455443e2650a652854cc
         
         return self._transform_rulelist_to_state(),reward,done,{}
 
@@ -224,6 +300,7 @@ class rulemodel_env(gym.core.Env):
     #====================================
     
 
+<<<<<<< HEAD
     def _render(self):
         pass
 
@@ -233,3 +310,9 @@ class rulemodel_env(gym.core.Env):
 
     def _seed(self):
         pass
+=======
+    def render(self):
+        pass
+
+    
+>>>>>>> 3a6764164ba4e5f521ff455443e2650a652854cc

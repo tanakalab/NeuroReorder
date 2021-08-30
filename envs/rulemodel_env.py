@@ -1,6 +1,7 @@
 import numpy as np
 import gym
 import gym.spaces
+import time
 
 from rulemodel import *
 
@@ -48,6 +49,7 @@ class rulemodel_env(gym.core.Env):
 
         self.initial_delay = self.rulelist.filter(self.packetlist)[0] * -1
 
+        self.start_time = time.time()
         
         #現在実装済みのアクションの数 (STAY、MOVEのふたつ)
         self.implemented_action_num = 2
@@ -197,6 +199,7 @@ class rulemodel_env(gym.core.Env):
                 #print(self.rulelist)
                 print("遅延 => ",end="")
                 print(self.rulelist.filter(self.packetlist)[0])
+                self.dump(delay)
         
         
         return self._transform_rulelist_to_state(),reward,done,{}
@@ -237,6 +240,18 @@ class rulemodel_env(gym.core.Env):
         
         return delay * -1
     
+
+
+    def dump(self,delay):
+        
+        with open("Dump/Rule_"+str(self.start_time)+"_["+str(delay)+"]_"+str(time.time()),"w",encoding="utf-8",newline="\n") as write_file:
+            
+            for i in range(len(self.rulelist)):
+                if self.rulelist[i].evaluate == "Accept":
+                    write_file.write("Accept\t"+self.rulelist[i].bit_string+"\n")
+                elif self.rulelist[i].evaluate == "Deny":
+                    write_file.write("Deny\t"+self.rulelist[i].bit_string+"\n")
+
     
     #====================================
     #=             未使用関数             =

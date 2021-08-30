@@ -1,6 +1,7 @@
 import math
 import argparse
 import datetime
+import time
 
 #自前環境
 from rulemodel import *
@@ -93,6 +94,7 @@ if __name__ == "__main__":
     #================================================================
     #参考にしたサイト : https://qiita.com/mahoutsukaino-deshi/items/54a30218a57c88798c17
     
+    start_time = time.time()
     #gymに環境を登録し、初期化変数を設定
     register(
         id='rulelistRecontrust-v0',
@@ -153,10 +155,13 @@ if __name__ == "__main__":
     #グラフ化
     plt.plot(history.history['nb_episode_steps'], label='nb_episode_steps')
     plt.legend()
-    plt.show()
+    plt.savefig("Dump/"+str(start_time)+"_nb_episode_steps.png")
+    plt.clf()
+    #plt.show()
     plt.plot(history.history['episode_reward'], label='episode_reward')
     plt.legend()
-    plt.show()
+    plt.savefig("Dump/"+str(start_time)+"_episode_reward.png")
+    #plt.show()
 
     
     """

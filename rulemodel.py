@@ -216,7 +216,7 @@ class RuleList:
     #=        パケット分類を行う関数        =
     #====================================
     # 返り値 -> 遅延の合計値
-    def filter(self,packet_list,is_print_position=False):
+    def filter(self,packet_list,is_print_position=False,is_print_detail=False):
         #遅延の合計値
         delay_all = 0
         match_number = []
@@ -262,9 +262,9 @@ class RuleList:
                     match_list.append("Deny")
                 match_default_rule_num += 1
             delay_all += delay
-
-        #print("合致パケットの分布:",match_number)
-        #print("デフォルトルール合致数:",match_default_rule_num)
+        if is_print_detail:
+            print("合致パケットの分布:",match_number)
+            print("デフォルトルール合致数:",match_default_rule_num)
 
         return (delay_all,match_list)
 

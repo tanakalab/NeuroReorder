@@ -60,10 +60,11 @@ if __name__ == "__main__":
     
     #フィルタリング
     print("Start packet filtering.")
-    res1 = rule_list.filter(packet_list,True)
+    res1 = rule_list.filter(packet_list,True,True)
     print("遅延合計値 = [%d]\n\nAll Packet is successfully filtered." % res1[0])
     print(len(rule_list))
 
+    """
     start = datetime.datetime.today()
     print("STARTED DEOVERLAP\t" + str(start))
 
@@ -88,7 +89,7 @@ if __name__ == "__main__":
     print("START TIME (DEOVERLAP)\t" + str(start))
     print("ALL PROGRAM COMPLETED!\t" + str(datetime.datetime.today()))
 
-
+    """
 
     """
     for i in range(len(rule_list)):

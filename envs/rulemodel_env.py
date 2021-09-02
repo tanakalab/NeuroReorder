@@ -49,7 +49,11 @@ class rulemodel_env(gym.core.Env):
 
         self.initial_delay = self.rulelist.filter(self.packetlist)[0] * -1
 
+        self.minimal_delay = self.initial_delay
+        
         self.start_time = time.time()
+
+        self.action_group = []
         
         #現在実装済みのアクションの数 (STAY、MOVEのふたつ)
         self.implemented_action_num = 2
@@ -103,13 +107,14 @@ class rulemodel_env(gym.core.Env):
         self.steps = 0
         self.stay_num = 0
         self.episode_reward = 0
-        self.episode_reward = self.initial_delay
+        #self.episode_reward = self.initial_delay
+        self.action_group = []
 
         self.rulelist = RuleList()
         for i in range(len(self.base_rulelist)):
             self.rulelist.append(self.base_rulelist[i])
         #print(self.rulelist)
-        #self.before_delay = self.initial_delay
+        self.before_delay = self.initial_delay
         
         return self._transform_rulelist_to_state()
         
@@ -133,11 +138,20 @@ class rulemodel_env(gym.core.Env):
         action = action // self.rulelist_len
         dst = action
 
-        if self.steps == 1:
-            action = 1
+        #if self.steps == 1:
+        #    typ = 1
         
         act = (typ,src,dst)
 
+        act_pass = False
+        
+        for x in self.action_group:
+            if src == x[0][1] and dst == x[0][2]:
+                act_pass = True
+                break
+
+
+        
         #print(act)
 
         # action [i,j,k] アクションを実行
@@ -155,26 +169,32 @@ class rulemodel_env(gym.core.Env):
         elif act[0] == 1:
 
             success = False
-            # 同値はエラーとして罰を与える
-            if act[1] == act[2]:
-                pass
-                #reward -= 10
-                
-            # 大小関係を意識しつつMOVEを実行
-            elif act[1] > act[2]:
-                success = self.rulelist.action_move(act[1],act[2])
-            else:
-                success = self.rulelist.action_move(act[2],act[1])
 
-            # 報酬計算
+            if not act_pass:
+                
             
-            if success:
-                pass
+                # 同値はエラーとして罰を与える
+                if act[1] == act[2]:
+                    pass
+                    #reward -= 100
+                
+                # 大小関係を意識しつつMOVEを実行
+                elif act[1] > act[2]:
+                    success = self.rulelist.action_move(act[1],act[2])
+                else:
+                    success = self.rulelist.action_move(act[2],act[1])
+                # 報酬計算
+                if success:
+                    pass
+                else:
+                    pass
+                    #reward -= 100
                 #reward += self.compute_reward()
             else:
                 pass
-            #    reward -= 10
-        # $---------------------------------------------------$
+                #reward -= 100
+            
+            # $---------------------------------------------------$
 
         # 終了判定
         #if self.stay_num >= self.max_stay:
@@ -182,26 +202,44 @@ class rulemodel_env(gym.core.Env):
         if self.steps >= self.max_steps:
             done = True
 
-        reward -= 1
-        self.episode_reward -= 1
+        reward -= 0.001
+        #self.episode_reward -= 1
+        #reward += self.compute_reward()
+
+        arr = [act,reward,self.episode_reward]
+        self.action_group.append(arr)
         
         if done:
+            #reward = 0
+            #delay = self.rulelist.filter(self.packetlist)[0]
             delay = self.compute_reward()
-            self.episode_reward = delay
-            reward = self.episode_reward
+            #reward += self.episode_reward
             #print(self.rulelist)
-            print("\n|%7d\t|%7d\t|%7d\033[1A"%(self.steps,delay,self.episode_reward),end="")
 
+            reward = -1 * (self.initial_delay - delay)
+            self.episode_reward += reward
+            print("\n|%7d\t|%7d\t|%7d\t%7d\033[1A"%(self.steps,delay,self.episode_reward,self.minimal_delay),end="")
+            
             # 終了時に報酬の最高値を更新した場合、その際のルールリストを出力
+            #if delay > self.minimal_delay:
             if self.episode_reward > self.max_reward:
-                self.max_reward = reward
-                print("\nNEW_MAX_REWARD -->> %d"%(self.max_reward))
+                self.max_reward = self.episode_reward
+                print("\n\nNEW_MAX_REWARD -->> %f"%(self.max_reward))
+                if delay > self.minimal_delay:
+                    self.minimal_delay = delay
+                    print("NEW_MIN_DELAY -->> %d"%(self.minimal_delay))
+                print("ACTION RECORD -> ",end="")
+                print(self.action_group)
+
                 #print(self.rulelist)
                 print("遅延 => ",end="")
                 print(self.rulelist.filter(self.packetlist)[0])
                 self.dump(delay)
-        
-        
+                
+
+        else:
+            self.episode_reward += reward
+                
         return self._transform_rulelist_to_state(),reward,done,{}
 
     
@@ -215,9 +253,9 @@ class rulemodel_env(gym.core.Env):
             element = []
             #先頭に評価型を数値として追加
             if self.rulelist[i].evaluate == "Accept":
-                element.append(1)
+                element.append(-2)
             else:
-                element.append(0)
+                element.append(-1)
 
             #残りの要素を追加
             element.extend(self.rulelist[i].bit_string_num)
@@ -235,9 +273,16 @@ class rulemodel_env(gym.core.Env):
     def compute_reward(self):
 
         delay = self.rulelist.filter(self.packetlist)[0]
-        #ret = self.before_delay - delay
-        #self.before_delay = delay
-        
+        ret = self.before_delay - delay
+        self.before_delay = delay
+        """
+        if ret > 0:
+            return 1
+        elif ret < 0:
+            return -200
+        else:
+            return -200
+        """
         return delay * -1
     
 
@@ -264,6 +309,6 @@ class rulemodel_env(gym.core.Env):
     
     def _close(self):
         pass
-
+        
     def _seed(self):
         pass

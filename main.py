@@ -59,7 +59,7 @@ if __name__ == "__main__":
     # -- ルールリストを形成 --
     rule_list = RuleList()
 
-    max_all_steps = 20000
+    max_all_steps = 100000
     max_steps = 200
     
     
@@ -126,24 +126,24 @@ if __name__ == "__main__":
 
     model.summary()
     #経験蓄積メモリの定義
-    memory = SequentialMemory(limit=1000, window_length=1)
+    memory = SequentialMemory(limit=10000, window_length=1,ignore_episode_boundaries=False)
     #ポリシの選択
     #policy = EpsGreedyQPolicy(eps=0.05)
-    policy = LinearAnnealedPolicy(EpsGreedyQPolicy(),attr='eps',value_max=1.,value_min=.1,value_test=.05,nb_steps=max_all_steps/5)
+    policy = LinearAnnealedPolicy(EpsGreedyQPolicy(),attr='eps',value_max=1.,value_min=.1,value_test=.05,nb_steps=max_all_steps/4*3)
     #DQNAgent作成
     dqn = DQNAgent(
         model=model,
         nb_actions=nb_actions,
         memory=memory,
-        gamma=.95,
-        nb_steps_warmup=100,
-        batch_size=32,
+        gamma=.99,
+        nb_steps_warmup=10000,
+        batch_size=16,
         train_interval=5,
-        target_model_update=1e-2,
+        target_model_update=10,
         policy=policy
     )
     #DQNAgentのコンパイル
-    dqn.compile(keras.optimizers.Adam(lr=1e-3),metrics=['mae'])
+    dqn.compile(keras.optimizers.Adam(lr=1e-8),metrics=['mae'])
 
     
     #学習開始
@@ -153,12 +153,12 @@ if __name__ == "__main__":
     dqn.save_weights('result.hdf5',overwrite=True)
 
     #グラフ化
-    plt.plot(history.history['nb_episode_steps'], label='nb_episode_steps')
+    plt.plot(history.history['nb_episode_steps'], label='nb_episode_steps',linewidth=1)
     plt.legend()
     plt.savefig("Dump/"+str(start_time)+"_nb_episode_steps.png")
     plt.clf()
     #plt.show()
-    plt.plot(history.history['episode_reward'], label='episode_reward')
+    plt.plot(history.history['episode_reward'], label='episode_reward',linewidth=1)
     plt.legend()
     plt.savefig("Dump/"+str(start_time)+"_episode_reward.png")
     #plt.show()

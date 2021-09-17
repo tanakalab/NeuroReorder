@@ -15,6 +15,7 @@ from tensorflow import keras
 from rl.agents.dqn import DQNAgent
 from rl.policy import LinearAnnealedPolicy
 from rl.policy import EpsGreedyQPolicy
+from rl.policy import BoltzmannQPolicy
 from rl.memory import SequentialMemory
 
 #グラフ出力
@@ -59,8 +60,8 @@ if __name__ == "__main__":
     # -- ルールリストを形成 --
     rule_list = RuleList()
 
-    max_all_steps = 100000
-    max_steps = 200
+    max_all_steps = 1000000
+    max_steps = 2000
     
     
     with open(args.rules,mode="r") as rulelist_file:
@@ -87,7 +88,9 @@ if __name__ == "__main__":
         for i in range(max_num):
             packet_list.append(format(i,specifier))
 
+    rule_list.compute_weight(packet_list)
 
+    
 
     #================================================================
     #=                       機械学習をする部分                        =
@@ -118,28 +121,31 @@ if __name__ == "__main__":
     print(nb_actions)
     model = keras.models.Sequential([
         keras.layers.Flatten(input_shape=(1,) + env.observation_space.shape),
-        keras.layers.Dense(64,activation="relu"),
-        keras.layers.Dense(64,activation="relu"),
-        keras.layers.Dense(64,activation="relu"),
-        keras.layers.Dense(nb_actions,activation="linear"),
+        keras.layers.Dense(256,activation="elu"),
+        keras.layers.Dense(256,activation="elu"),
+        keras.layers.Dense(256,activation="elu"),
+        keras.layers.Dense(256,activation="elu"),
+        keras.layers.Dense(256,activation="elu"),
+        keras.layers.Dense(nb_actions,activation="softmax"),
     ])
 
     model.summary()
     #経験蓄積メモリの定義
-    memory = SequentialMemory(limit=10000, window_length=1,ignore_episode_boundaries=False)
+    memory = SequentialMemory(limit=50000, window_length=1,ignore_episode_boundaries=True)
     #ポリシの選択
     #policy = EpsGreedyQPolicy(eps=0.05)
-    policy = LinearAnnealedPolicy(EpsGreedyQPolicy(),attr='eps',value_max=1.,value_min=.1,value_test=.05,nb_steps=max_all_steps/4*3)
+    #policy = BoltzmannQPolicy(tau=1.,clip=(-500.,500.))
+    policy = LinearAnnealedPolicy(EpsGreedyQPolicy(),attr='eps',value_max=.9,value_min=.1,value_test=.05,nb_steps=max_all_steps/4*3)
     #DQNAgent作成
     dqn = DQNAgent(
         model=model,
         nb_actions=nb_actions,
         memory=memory,
-        gamma=.99,
-        nb_steps_warmup=10000,
+        gamma=.95,
+        nb_steps_warmup=100,
         batch_size=16,
         train_interval=5,
-        target_model_update=10,
+        target_model_update=5,
         policy=policy
     )
     #DQNAgentのコンパイル
@@ -151,6 +157,7 @@ if __name__ == "__main__":
 
     #学習した重みを保存
     dqn.save_weights('result.hdf5',overwrite=True)
+
 
     #グラフ化
     plt.plot(history.history['nb_episode_steps'], label='nb_episode_steps',linewidth=1)

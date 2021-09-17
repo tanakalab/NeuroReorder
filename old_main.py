@@ -10,6 +10,10 @@ parser.add_argument(
     type=str,
     help="読み込むルールファイルのパス. ClassBenchルール変換プログラムの6番を使用し,assign_evaluation_to_rulelist.pyで評価型を付与すること.")
 parser.add_argument(
+    "--rules2",
+    type=str,
+    help="読み込むルールファイルのパス. ClassBenchルール変換プログラムの6番を使用し,assign_evaluation_to_rulelist.pyで評価型を付与すること.")
+parser.add_argument(
     "--packets",
     type=str,
     default=None,
@@ -36,6 +40,16 @@ if __name__ == "__main__":
             if not rule:
                 break
             rule_list.append(Rule(rule[0],rule[1]))
+            
+    rule_list2 = RuleList()
+    
+    with open(args.rules2,mode="r") as rulelist_file:
+        while rulelist_file:
+            rule = rulelist_file.readline().split()
+            #print(rule)
+            if not rule:
+                break
+            rule_list2.append(Rule(rule[0],rule[1]))
 
     #パケットリストを形成
     packet_list = []
@@ -53,17 +67,33 @@ if __name__ == "__main__":
         for i in range(max_num):
             packet_list.append(format(i,specifier))
 
-
-    #リストをprintする場合はする
-    if args.print_rulelist_detail:
-        print(rule_list)
     
     #フィルタリング
     print("Start packet filtering.")
     res1 = rule_list.filter(packet_list,True,True)
     print("遅延合計値 = [%d]\n\nAll Packet is successfully filtered." % res1[0])
-    print(len(rule_list))
+    
 
+    #リストをprintする場合はする
+    if args.print_rulelist_detail:
+        print(rule_list)
+
+    #フィルタリング
+    print("Start packet filtering.")
+    res1 = rule_list.filter(packet_list,True,True)
+    print("遅延合計値 = [%d]\n\nAll Packet is successfully filtered." % res1[0])
+
+    #フィルタリング
+    print("Start packet filtering.")
+    res2 = rule_list2.filter(packet_list,True,True)
+    print("遅延合計値 = [%d]\n\nAll Packet is successfully filtered." % res2[0])
+
+    for i in range(len(res1[1])):
+        if res1[1][i] != res2[1][i]:
+            print("ERROR")
+    
+    #print(rule_list.expected_decline_src())
+        
     """
     start = datetime.datetime.today()
     print("STARTED DEOVERLAP\t" + str(start))

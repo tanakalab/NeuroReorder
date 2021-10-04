@@ -56,13 +56,14 @@ class Rule:
     #====================================
     # 引数 -> パケットのbit列 bit_string
     # 返り値 -> True or False
-    def match(self,bit_string):
+    def match(self,bit_string,renew_weight=False):
         assert len(self.bit_string) == len(bit_string),"入力されたパケットのbit列の長さがルールのbit列と異なります."
         for i in range(len(self.bit_string)):
             if self.bit_string[i] != "*":
                 if self.bit_string[i] != bit_string[i]:
                     return False
-        self.weight += 1
+        if renew_weight:
+            self.weight += 1
         self.match_num += 1
         return True
 
@@ -224,11 +225,22 @@ class RuleList:
         
         for i in self.rule_list:
             i.weight = 0
+
         
+        #パケットの数だけループ
+        for i in range(len(packet_list)):
+            #ルールリストの先頭からマッチするか確認
+            for j in range(len(self.rule_list)):
+                if self.rule_list[j].match(packet_list[i],True):
+                    break
+        
+            
+        """
         for i in range(len(packet_list)):
             for j in range(len(self.rule_list)):
                 self.rule_list[j].match(packet_list[i])
-
+        """
+                
     #====================================
     #=        パケット分類を行う関数        =
     #====================================

@@ -48,6 +48,9 @@ class rulemodel_env(gym.core.Env):
         self.max_reward = -999999999
         self.episode_reward = 0
 
+        #重みを計算しておく
+        self.rulelist.compute_weight(self.packetlist)
+        
         self.initial_delay = self.rulelist.filter(self.packetlist)[0]
 
         self.minimal_delay = self.initial_delay
@@ -153,7 +156,7 @@ class rulemodel_env(gym.core.Env):
         if len(expected_decline_list) <= 0:
             self.stay_num += 1
             dst = src
-            reward -= 1
+            #reward -= 1
         else:
             dst = expected_decline_list[action % len(expected_decline_list)]
         
@@ -229,7 +232,7 @@ class rulemodel_env(gym.core.Env):
         if self.steps >= self.max_steps - 1:
             done = True
 
-        reward -= 1
+        #reward -= 1
         #reward += self.compute_reward()
         self.episode_reward += reward
         if success:

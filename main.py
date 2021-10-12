@@ -13,6 +13,7 @@ import gym
 from gym.envs.registration import register
 from tensorflow import keras
 from rl.agents.dqn import DQNAgent
+from rl.agents.sarsa import SARSAAgent
 from rl.policy import LinearAnnealedPolicy
 from rl.policy import EpsGreedyQPolicy
 from rl.policy import BoltzmannQPolicy
@@ -35,6 +36,12 @@ parser.add_argument(
     type=str,
     default=None,
     help="読み込むパケットファイルのパス.ClassBenchルール変換プログラムの6番を使用すること.無指定の場合は一様分布(全ての場合のパケット1つずつ).")
+
+parser.add_argument(
+    "--algo",
+    type=str,
+    default="DQN",
+    help="使用アルゴリズム.DQNまたはSARSA.")
 
 
 #うるせぇアルパカぶつけるぞ 
@@ -136,18 +143,31 @@ if __name__ == "__main__":
     #policy = EpsGreedyQPolicy(eps=0.05)
     #policy = BoltzmannQPolicy(tau=1.,clip=(-500.,500.))
     policy = LinearAnnealedPolicy(EpsGreedyQPolicy(),attr='eps',value_max=.9,value_min=.1,value_test=.05,nb_steps=max_all_steps/4*3)
-    #DQNAgent作成
-    dqn = DQNAgent(
-        model=model,
-        nb_actions=nb_actions,
-        memory=memory,
-        gamma=.95,
-        nb_steps_warmup=100,
-        batch_size=16,
-        train_interval=5,
-        target_model_update=5,
-        policy=policy
-    )
+    #Agent作成
+
+    dqn = None
+    
+    if args.algo == "DQN":
+        dqn = DQNAgent(
+            model=model,
+            nb_actions=nb_actions,
+            memory=memory,
+            gamma=.95,
+            nb_steps_warmup=100,
+            batch_size=16,
+            train_interval=5,
+            target_model_update=5,
+            policy=policy
+        )
+    elif args.algo == "SARSA":
+        dqn = SARSAAgent(
+            model=model,
+            nb_actions=nb_actions,
+            gamma=.95,
+            nb_steps_warmup=100,
+            train_interval=5,
+            policy=policy
+        )
     #DQNAgentのコンパイル
     dqn.compile(keras.optimizers.Adam(lr=1e-8),metrics=['mae'])
 

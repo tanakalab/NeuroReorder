@@ -362,7 +362,7 @@ class DependencyGraphModel:
             
             for element in addlist:
                 #self.hikages_reordered_rulelist.append(self.rule_list[element[0]-1])
-                self.hikages_reordered_nodelist.append(element[0]-1)
+                self.hikages_reordered_nodelist.append(element[0])
                 self.removed_nodelist.append(element[0])
 
             

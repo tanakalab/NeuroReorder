@@ -95,9 +95,17 @@ if __name__ == "__main__":
 
     while len(graph.removed_nodelist) < len(list(graph.graph.nodes)):
         graph.show_graph()
-        #graph.single__sub_graph_mergine()
-        graph.single__hikage_method()
-        #print(graph.sgms_reordered_nodelist)
+
+
+        chosen_algorithm = input("使用アルゴリズム(SGMの\"s\"または日景の\"h\"):")
+        if chosen_algorithm == "s":
+            graph.single__sub_graph_mergine()
+        elif chosen_algorithm == "h":
+            graph.single__hikage_method()
+        
+        print("SGMの整列済みリスト：",end="")
+        print(graph.sgms_reordered_nodelist)
+        print("Hikageの整列済みリスト：",end="")
         print(graph.hikages_reordered_nodelist)
         
         

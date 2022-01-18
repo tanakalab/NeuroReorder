@@ -4,7 +4,7 @@ import time
 
 #  嘘は嘘であると
 #  見抜けぬ人でないと
-#  (このクラスを使うこと)は難しい
+#  (このクラスを使うこと)は難しい HIKAGE版
 #　　　　＿＿_＿
 #　　　／へへ　 ＼
 #　　／／⌒⌒＼　 ＼
@@ -46,8 +46,7 @@ class Rule:
             else:
                 self.bit_string_num.append(1)
         #重み(フィルタリング時に決定)
-        self.weight = 0
-        self.match_num = 0
+        self._weight = 0
 
             
             
@@ -56,15 +55,14 @@ class Rule:
     #====================================
     # 引数 -> パケットのbit列 bit_string
     # 返り値 -> True or False
-    def match(self,bit_string,renew_weight=False):
+    def match(self,bit_string):
         assert len(self.bit_string) == len(bit_string),"入力されたパケットのbit列の長さがルールのbit列と異なります."
+        
         for i in range(len(self.bit_string)):
             if self.bit_string[i] != "*":
                 if self.bit_string[i] != bit_string[i]:
                     return False
-        if renew_weight:
-            self.weight += 1
-        self.match_num += 1
+        self._weight += 1
         return True
 
     #====================================
@@ -217,30 +215,28 @@ class RuleList:
     # 引数 -> ルール
     def append(self, rule):
         self.rule_list.append(rule)
-        
+
     #====================================
     #=     各ルールの重みを計算する関数      =
     #====================================
-    def compute_weight(self,packet_list):
+    def compute_weight(self,packet_list,mode="hikage"):
         
         for i in self.rule_list:
-            i.weight = 0
+            i._weight = 0
 
         
-        #パケットの数だけループ
-        for i in range(len(packet_list)):
-            #ルールリストの先頭からマッチするか確認
-            for j in range(len(self.rule_list)):
-                if self.rule_list[j].match(packet_list[i],True):
-                    break
-        
+        if mode == "hikage":    
+            for i in range(len(packet_list)):
+                for j in range(len(self.rule_list)):
+                    if self.rule_list[j].match(packet_list[i]):
+                        break
+        elif mode == "sgm":
+            for i in range(len(packet_list)):
+                for j in range(len(self.rule_list)):
+                    self.rule_list[j].match(packet_list[i])    
+
             
-        """
-        for i in range(len(packet_list)):
-            for j in range(len(self.rule_list)):
-                self.rule_list[j].match(packet_list[i])
-        """
-                
+
     #====================================
     #=        パケット分類を行う関数        =
     #====================================
@@ -254,12 +250,11 @@ class RuleList:
         match_list = []
         for i in range(len(self.rule_list)):
             match_number.append(0)
+
         
         #print文用の区切り値
         lap = 10**(len(str(len(packet_list))) - 2)
-
-        for i in self.rule_list:
-            i.match_num = 0
+        
 
         #パケットの数だけループ
         for i in range(len(packet_list)):
@@ -281,7 +276,7 @@ class RuleList:
                 if self.rule_list[j].match(packet_list[i]):
                     match_position = j
                     break
-                #j += 1
+                j += 1
             if match_position != -1: #どこかに合致した場合
                 match_number[j] += 1
                 if is_print_position:
@@ -289,7 +284,7 @@ class RuleList:
                     match_list.append(self[match_position].evaluate)
             else: #どこにも合致しなかった場合
                 if is_print_position:
-                    print("%s\tPacket[%d] is matched Default rule. Delay = [%d]" % ("Deny",i,delay))
+                    print("%s\tPacket[%d] is matched Default rule. Delay = [%d]" % (self[match_position].evaluate,i,delay))
                     match_list.append("Deny")
                 match_default_rule_num += 1
             delay_all += delay
@@ -321,7 +316,7 @@ class RuleList:
         del self.rule_list[rule_pos]
         
         if rule_pos < destination:
-            self.rule_list.insert(destination,x)
+            self.rule_list.insert(destination-1,x)
         else:
             self.rule_list.insert(destination,x)
         return True
@@ -465,7 +460,7 @@ class RuleList:
         else:
             #print(i)
             return i
-    
+
     #====================================
     #=   一様分布の場合の遅延を計算する関数   =（未実装）
     #====================================
@@ -493,9 +488,9 @@ class RuleList:
         print("[ ][ ]ルールリスト[ ][ ]")
         for i in range(len(self.rule_list)):
             if self.rule_list[i].evaluate == "Accept":
-                print("[%5d]<%6d> P %s" % (i,self.rule_list[i].match_num,self.rule_list[i].bit_string))
+                print("[%d] P %s" % (i+1,self.rule_list[i].bit_string))
             elif self.rule_list[i].evaluate == "Deny":
-                print("[%5d]<%6d> D %s" % (i,self.rule_list[i].match_num,self.rule_list[i].bit_string))
+                print("[%d] D %s" % (i+1,self.rule_list[i].bit_string))
 
         print("[ ] Default Rule [ ]\n")
         overlap_score = 0
@@ -503,7 +498,7 @@ class RuleList:
         for i in reversed(range(len(self.rule_list))):
             if self.is_print_match_packet:
                 print("ルール[%d]に合致するパケット ->" % i , self.rule_list[i].match_packet_list(self.rule_list[i].bit_string,0))
-            for j in reversed(range(0,i-1)):
+            for j in reversed(range(0,i)):
                 
                 if self.rule_list[j].is_overlap(self.rule_list[i]):
                     count_mask = self.rule_list[j].count_mask
@@ -514,11 +509,11 @@ class RuleList:
                         if self.rule_list[j].is_cover(self.rule_list[i]):
                             print("ルール[%d]とルール[%d]は従属かつ被覆関係\t%d" % (i , j,count_mask))
                         else:
-                            print("ルール[%d]とルール[%d]は従属関係\t%d" % (i , j,count_mask))
+                            print("ルール[%d]とルール[%d]は従属関係\t%d" % (i+1 , j+1,count_mask))
                     elif self.rule_list[j].is_cover(self.rule_list[i]):
-                        print("ルール[%d]とルール[%d]は被覆関係" % (i , j))
+                        print("ルール[%d]とルール[%d]は被覆関係" % (i+1 , j+1))
                     else:
-                        print("ルール[%d]とルール[%d]は重複関係\t%d" % (i , j,count_mask))
+                        print("ルール[%d]とルール[%d]は重複関係\t%d" % (i+1 , j+1,count_mask))
         if overlap_score != 0:
             print("OVERLAP_SCORE = %d" % overlap_score)
             print("SUPER_SCORE = %d" % super_score)
@@ -557,63 +552,3 @@ class RuleList:
             for x in target_list:
                 self.rule_list.insert(i,x)
 
-
-    #====================================
-    #= 移動可能なルール位置のリストを返す関数 =
-    #====================================
-    def movable_list(self,rule_num):
-        movable_nums = []
-
-        for i in reversed(range(0,rule_num)):
-            if self.rule_list[rule_num].is_dependent(self.rule_list[i]):
-                break
-            movable_nums.append(i)
-        
-        rule_num_index = len(movable_nums)
-        for i in range(rule_num + 1,len(self.rule_list)):
-            if self.rule_list[rule_num].is_dependent(self.rule_list[i]):
-                break
-            movable_nums.append(i)
-
-
-        return (movable_nums,rule_num_index)
-    
-    #====================================
-    #= 遅延の減少が期待される位置のリストを返す =
-    #====================================
-    def expected_decline_list(self,rule_num):
-        expected_decline_nums = []
-        movable_list = self.movable_list(rule_num)
-        movable_nums = movable_list[0]
-        #print(movable_nums[movable_list[1]])
-        #print("MOVEABLE_LIST ",end="")
-        #print(movable_list)
-        for i in range(movable_list[1]):
-            #print("%d %d"%(movable_nums[i],rule_num))
-            if self.rule_list[rule_num].match_num > self.rule_list[movable_nums[i]].match_num:
-                expected_decline_nums.append(movable_nums[i])
-            else:
-                break
-        
-        for i in range(movable_list[1],len(movable_nums)):
-            #print("%d %d"%(movable_nums[i],rule_num))
-
-            if self.rule_list[rule_num].match_num < self.rule_list[movable_nums[i]].match_num:
-                expected_decline_nums.append(movable_nums[i])
-            else:
-                break
-           
-        return expected_decline_nums
-
-    #======================================
-    #= 遅延の減少が期待されるsourceの一覧を返す =
-    #======================================
-    def expected_decline_src(self):
-        expected_dec_src_list = []
-        for i in range(len(self.rule_list)):
-            if len(self.expected_decline_list(i)) > 0:
-                #print("%d |"%(i),end="")
-                #print(self.expected_decline_list(i))
-                expected_dec_src_list.append(i)
-
-        return expected_dec_src_list

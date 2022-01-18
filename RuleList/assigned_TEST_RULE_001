@@ -1,6 +1,7 @@
-Accept	*1**1
-Deny	00**1
-Deny	**011
-Accept	**101
-Deny	*0*11
-Accept	*11*0
+Accept	1**1
+Deny	1*00
+Deny	*11*
+Accept	11**
+Accept	*10*
+Accept	**11
+Deny	****

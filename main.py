@@ -100,6 +100,7 @@ if __name__ == "__main__":
         #print(graph.sgms_reordered_nodelist)
         print(graph.hikages_reordered_nodelist)
         
+        
     #print(graph.sgms_reordered_rulelist)        
     #print(graph.hikages_reordered_nodelist)
     

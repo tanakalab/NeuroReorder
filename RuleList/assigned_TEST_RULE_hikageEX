@@ -1,0 +1,10 @@
+Deny	*001
+Deny	*000
+Accept	101*
+Accept	001*
+Deny	1*10
+Deny	*101
+Accept	0*0*
+Deny	**11
+Accept	*11*
+Deny	110*

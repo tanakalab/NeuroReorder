@@ -1,0 +1,6 @@
+Deny	1*10
+Deny	**01
+Accept	11**
+Accept	10**
+Accept	01**
+Deny	****

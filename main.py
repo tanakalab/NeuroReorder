@@ -1,10 +1,30 @@
+
 import math
 import argparse
-from rulemodel import *
-from DependencyGraphModel import *
 import datetime
+import time
+
+import random
+
 import networkx as nx
 import matplotlib.pyplot as plt
+"""
+#gym関連
+import gym
+from gym.envs.registration import register
+from tensorflow import keras
+from rl.agents.dqn import DQNAgent
+from rl.agents.sarsa import SARSAAgent
+from rl.policy import LinearAnnealedPolicy
+from rl.policy import EpsGreedyQPolicy
+from rl.policy import BoltzmannQPolicy
+from rl.memory import SequentialMemory
+"""
+
+#自前環境
+from rulemodel import *
+from DependencyGraphModel import *
+from envs.rulemodel_env import rulemodel_env
 
 parser = argparse.ArgumentParser()
 
@@ -28,12 +48,20 @@ parser.add_argument(
     default=False,
     help="従属グラフを見たい場合はTrueにするとプロットする.")
 
+parser.add_argument(
+    "--algo",
+    type=str,
+    default="DQN",
+    help="使用アルゴリズム.DQNまたはSARSA.")
 
 
 if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    max_all_steps = 1000000
+    max_steps = 2000
+    
     #ルールリストを形成
     rule_list = RuleList()
     
@@ -97,10 +125,10 @@ if __name__ == "__main__":
         graph.show_graph()
 
 
-        chosen_algorithm = input("使用アルゴリズム(SGMの\"s\"または日景の\"h\"):")
-        if chosen_algorithm == "s":
+        chosen_algorithm = random.randint(0,1) #input("使用アルゴリズム(SGMの\"s\"または日景の\"h\"):")
+        if chosen_algorithm == 0:
             graph.single__sub_graph_mergine()
-        elif chosen_algorithm == "h":
+        elif chosen_algorithm == 1:
             graph.single__hikage_method()
         
         print("SGMの整列済みリスト：",end="")
@@ -108,6 +136,9 @@ if __name__ == "__main__":
         print("Hikageの整列済みリスト：",end="")
         print(graph.hikages_reordered_nodelist)
         
+        
+    final_nodelist = graph.complete()
+    print(final_nodelist)
         
     #print(graph.sgms_reordered_rulelist)        
     #print(graph.hikages_reordered_nodelist)

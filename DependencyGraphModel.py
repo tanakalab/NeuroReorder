@@ -87,14 +87,15 @@ class DependencyGraphModel:
         sum_of_weight = 0
         keys = []
         dict = nx.shortest_path(self.graph,source=src)
-        print(dict.keys(),end="")
+        
+        #print(dict.keys(),end="")
         
         for key in dict.keys():
-            print("%d "%(self.rule_list[key-1]._weight),end="")
+            #print("%d "%(self.rule_list[key-1]._weight),end="")
             sum_of_weight += self.rule_list[key-1]._weight
             keys.append(key)
-        print("")
-
+        #print("")
+        
         #if len(keys) <= 1:
         #    return False
         #print("ノード%dの重み平均：%f\t"%(src,sum_of_weight),end="")
@@ -142,44 +143,18 @@ class DependencyGraphModel:
     def create_cutted_graph(self):
         graph = self.copied_graph()
         for element in self.removed_nodelist:
-            print(element)
+            #print(element)
             graph.remove_node(element)
 
         return graph
-        
 
-
-    def sub_graph_mergine(self):
-        ret_rulelist = RuleList()
-        _next = list(self.graph.nodes)
-
-        nodelist = []
-        
-        while len(list(self.graph.nodes)) > 0:
-            choice = self.decide_choice(_next,self.graph)
-            
-            #print(_next,end="")
-            if choice == -1:
-                for i in _next:
-                    ret_rulelist.append(self.rule_list[i-1])
-                #print("BREAK.")
-                break
-            
-            #print(" -> ",end="")
-            #print("{={%d}=} -> "%(choice),end="")
-            _next = list(self.graph.succ[choice])
-            #print(_next,end="")
-            if len(_next) <= 0:
-                ret_rulelist.append(self.rule_list[choice-1])
-                #print("\t|r[%d]|"%(choice-1),end="")
-                self.graph.remove_node(choice)
-                nodelist.append(choice)
-                _next = list(self.graph.nodes)
-            #print("")
-
-        print(nodelist)
-        return ret_rulelist
-                
+    # ノードがなくなったときに実行、リストを連結して返り値として返す
+    def complete(self):
+        #日景法の整列済みリストは逆順になっているのでリバース
+        self.hikages_reordered_nodelist.reverse()
+        #リストを連結して新しいリストにする
+        return self.sgms_reordered_nodelist + self.hikages_reordered_nodelist
+    
     def single__sub_graph_mergine(self):
 
         # グラフをコピー
@@ -187,9 +162,7 @@ class DependencyGraphModel:
         for element in self.removed_nodelist:
             copied_graph.remove_node(element)
 
-
         _next = list(copied_graph.nodes)
-
         
         while True:
             choice = self.decide_choice(_next)
@@ -206,7 +179,7 @@ class DependencyGraphModel:
             #print(" -> ",end="")
             #print("{={%d}=} -> "%(choice),end="")
             _next = list(copied_graph.succ[choice])
-            print(_next)
+            #print(_next)
             if len(_next) <= 0:
                 #print("\t|r[%d]|"%(choice-1),end="")
                 self.sgms_reordered_nodelist.append(choice)
@@ -229,7 +202,7 @@ class DependencyGraphModel:
             ret_graph.add_edge(edge[0],edge[1])
 
 
-        print(list(ret_graph.nodes))
+        #print(list(ret_graph.nodes))
         return ret_graph
         
         
@@ -319,8 +292,8 @@ class DependencyGraphModel:
                 if len(N) == 0:
                     Ns.remove(N)
 
-        print("Ns = ",end="")
-        print(Ns)
+        #print("Ns = ",end="")
+        #print(Ns)
             
         # すべてのNが空になる(空になったNをNsから削除することでNの要素数で判定できる)まで
         while(len(Ns) > 0):
@@ -358,7 +331,7 @@ class DependencyGraphModel:
             addlist.reverse()
             sorted_list += addlist
 
-            print(addlist)
+            #print(addlist)
             
             for element in addlist:
                 #self.hikages_reordered_rulelist.append(self.rule_list[element[0]-1])
@@ -384,8 +357,8 @@ class DependencyGraphModel:
         
         sorted_list  = [sorted_list[i][0] for i in range(len(sorted_list))]
         sorted_list.reverse()
-        print("整列済みリストの順番:",end="")
-        print(sorted_list)
+        #print("整列済みリストの順番:",end="")
+        #print(sorted_list)
         for i in range(len(sorted_list)):
             ret_rulelist.append(self.rule_list[sorted_list[i]-1])
 

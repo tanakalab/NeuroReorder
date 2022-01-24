@@ -4,6 +4,7 @@ import gym.spaces
 import time
 
 from rulemodel import *
+from DependencyGraphModel import *
 
 #なんかそういう
 #環境あるんですか？
@@ -32,277 +33,164 @@ class rulemodel_env(gym.core.Env):
     #====================================
     #=            クラス初期化            =
     #====================================
-    def __init__(self,rulelist,packetlist,max_steps,max_stay):
+    def __init__(self,rulelist,packetlist,graph,max_steps,max_stay):
         # パラメータを設定
         self.base_rulelist = rulelist
         self.rulelist = rulelist
         self.packetlist = packetlist
         self.max_steps = max_steps
         self.max_stay = max_stay
-        
-        self.steps = 0
-        self.stay_num = 0
-        self.before_delay = 0
-        self.delay = 0
+        self.init_graph = graph
+        self.calc_graph = None
 
-        self.max_reward = -999999999
-        self.episode_reward = 0
+        self.steps = 0
+        #self.stay_num = 0
+        #self.before_delay = 0
+        #self.delay = 0
+
+        self.max_reward = -9999999999
+        #self.episode_reward = 0
 
         #重みを計算しておく
         self.rulelist.compute_weight(self.packetlist)
-        
-        self.initial_delay = self.rulelist.filter(self.packetlist)[0]
 
-        self.minimal_delay = self.initial_delay
-        
+        #self.initial_delay = self.rulelist.filter(self.packetlist)[0]
+        #self.minimal_delay = self.initial_delay
+
         self.start_time = time.time()
 
         self.action_group = []
-        
-        #現在実装済みのアクションの数 (STAY、MOVEのふたつ)
+
+        #現在実装済みのアクションの数 (SGMと日景法の2つ)
         self.implemented_action_num = 2
-        
-        # ルーリストの大きさとビット長（環境）を決定
-        self.rulelist_len = len(rulelist)
-        self.bit_string_len = len(rulelist[0]) + 2
 
+        #行動空間の大きさを指定
+        self.action_space = gym.spaces.Discrete(self.implemented_action_num)
 
-        # 行動空間を設定(0-STAY 1-MOVE)
-        #self.action_space = gym.spaces.Discrete(2)
+        self.observation_eachlength = max([len(list(self.init_graph.graph.nodes)),len(self.init_graph.graph.edges)])
 
-        #各次元の上限値
-        # 1 -> アクション数
-        # 2 -> ルール数 (アクション適用先のルール位置 , 一部アクションでは未使用)
-        # 3 -> ルール数 (アクション適用先のルール位置2 (例：MOVE先))
-        high = np.array(
-            [
-                self.implemented_action_num - 1,
-                self.rulelist_len - 1,
-                self.rulelist_len - 1,
-            ],
-            dtype=np.int16,)
-
-        #行動空間の大きさ (NNの構築で使用)
-        self.action_space_size = (self.implemented_action_num) * (self.rulelist_len) * (self.rulelist_len)
-
-
-
-        
-        self.action_space = gym.spaces.Box(
-            low=0,
-            high=high,
-            shape=(3,),
-            dtype=np.int16)
-        
-        
-        # 状態空間を設定(リスト長 x ビット長+1(評価型を先頭に付与))
-        # bit値 0->0  1->1  *->2
-        # 評価型 D->0  P->1
+        #### 懸念箇所＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+        # 状態空間を指定
+        # 最大値→グラフのノード数かパケット集合の大きさのどちらか最大値
+        # 1次元目　→　ノード番号のリスト
+        #２次元目　→　各ノードの重み
+        #３次元目　→　エッジリストの要素１つ目
+        #４次元目　→　エッジリストの要素２つ目
         self.observation_space = gym.spaces.Box(
             low=0,
-            high=3,
-            shape=(self.rulelist_len,self.bit_string_len),
+            high=max([len(list(self.init_graph.graph.nodes)),len(self.packetlist)]),
+            shape=(4,self.observation_eachlength),
             dtype=np.int16)
-        
+
     #====================================
     #=             環境初期化             =
     #====================================
-    def _reset(self):
+    def reset(self):
         self.steps = 0
-        self.stay_num = 0
-        self.episode_reward = 0
+        #self.stay_num = 0
+        #self.episode_reward = 0
         #self.episode_reward = self.initial_delay
         self.action_group = []
+        self.calc_graph =  DependencyGraphModel(self.base_rulelist)
 
+        """
         self.rulelist = RuleList()
         for i in range(len(self.base_rulelist)):
             self.rulelist.append(self.base_rulelist[i])
         #print(self.rulelist)
         self.before_delay = self.initial_delay
-        
-        return self._transform_rulelist_to_state()
-        
-        
+        """
+        return self.transform_rulelist_to_state()
+
     #====================================
     #=           1ステップの処理           =
     #====================================
-    def _step(self,action):
+    def step(self,action):
 
-
-        #変数初期化
-        reward = 0
+        # 変数初期化
         done = False
-        err_message = "Failed"
-        self.steps += 1
-        #print(action)
+        reward = 0
 
-        # actionの値をタプル型へ変換
-        typ = action % self.implemented_action_num
-        action = action // self.implemented_action_num
-        src = action % self.rulelist_len
-        """
-        expected_decline_src = self.rulelist.expected_decline_src()
-        if len(expected_decline_src) <= 0:
-            done = True
-        else:
-            src = expected_decline_src[src % len(expected_decline_src)]
-        """
-        action = action // self.rulelist_len
-        dst = action
+        # アクションの値によって使用する発見的解法を変更
 
-        #遅延現象が期待される移動先を出し、その中から選択
-        
-        expected_decline_list = self.rulelist.expected_decline_list(src)
-        if len(expected_decline_list) <= 0:
-            self.stay_num += 1
-            dst = src
-            #reward -= 1
-        else:
-            dst = expected_decline_list[action % len(expected_decline_list)]
-        
-        #if self.steps == 1:
-        typ = 1
-        
-        act = (typ,src,dst)
+        # 0 -> Sub Graph Merging
+        if action == 0:
+            self.calc_graph.single__sub_graph_mergine()
+        # 1 -> Hikage Method
+        elif action == 1:
+            self.calc_graph.single__hikage_method()
 
-        #print(expected_decline_src)
-        #print(expected_decline_list)
-        #print(act,end="")
-
-        
-        act_pass = False
-        """
-        for x in self.action_group:
-            if src == x[0][1] and dst == x[0][2]:
-                act_pass = True
-                reward -= 0.001
-                break
-        """
-
-        success = False
-        
-        #print(act)
-
-        # action [i,j,k] アクションを実行
-        # $=================$ アクション STAY $=================$
-        # -> 何もせず待機（ただし報酬-1）
-        if act[0] == 0:
-            done = True
-            #self.episode_reward -= self.max_steps / self.steps
-            #reward -= 1
-            #self.stay_num += 1
-        # $---------------------------------------------------$
-
-        # $=================$ アクション MOVE $=================$
-        # -> ルールjをルールkの位置へ移動（失敗した場合は報酬-10して状態維持
-        elif act[0] == 1:
-
-
-            if not act_pass:
-                
-            
-                # 同値はエラー
-                if act[1] == act[2]:
-                    pass
-                    #reward -= 0.001
-                
-                # 大小関係を意識しつつMOVEを実行
-                elif act[1] > act[2]:
-                    success = self.rulelist.action_move(act[1],act[2])
-                else:
-                    success = self.rulelist.action_move(act[1],act[2])
-                # 報酬計算
-                if success:
-                    #pass
-                    self.stay_num = 0
-                    reward += self.compute_reward()
-                else:
-                    pass
-                    #reward -= 0.001
-                #reward += self.compute_reward()
-            else:
-                pass
-                #reward -= 0.001
-            
-            # $---------------------------------------------------$
+        #print(list(self.calc_graph.graph.nodes))
+        #print(list(self.calc_graph.removed_nodelist))
 
         # 終了判定
-        if self.stay_num >= self.max_stay:
-            done = True
-        if self.steps >= self.max_steps - 1:
+        if len(self.calc_graph.removed_nodelist) >= len(list(self.calc_graph.graph.nodes)):
             done = True
 
-        #reward -= 1
-        #reward += self.compute_reward()
-        self.episode_reward += reward
-        if success:
-            arr = [act]
-        else:
-            arr = err_message
-        self.action_group.append(arr)
-        
-        print("\n|%7d\t|%7d\t|%7.4f\t|%7.4f\t|<>|%7d\033[1A"%(self.steps,self.delay,reward,self.episode_reward,self.minimal_delay),end="")
-            
+        # 終了時処理
         if done:
-            #reward = 0
-            delay = self.rulelist.filter(self.packetlist)[0]
-            #delay = self.compute_reward()
-            #reward += self.episode_reward
-            #print(self.rulelist)
+            # 実行結果を連結し、ルールリストを構築
+            reordered_rulelist = self.calc_graph.complete()
 
-            #reward = -1 * (self.initial_delay - delay)
-            #self.episode_reward += reward
-            #print("\n|%7d\t|%7d\t|%7d\t%7d\033[1A"%(self.steps,delay,self.episode_reward,self.minimal_delay),end="")
-            
+
+
+            reward = (-1) * reordered_rulelist.filter(self.packetlist)[0]
+
             # 終了時に報酬の最高値を更新した場合、その際のルールリストを出力
-            if delay < self.minimal_delay:
+            if reward > self.max_reward:
                 #if self.episode_reward > self.max_reward:
-                self.max_reward = self.episode_reward
+                self.max_reward = reward
                 print("\n\nNEW_REWARD -->> %f"%(self.max_reward))
-                if delay < self.minimal_delay:
-                    self.minimal_delay = delay
-                    print("NEW_MIN_DELAY -->> %d"%(self.minimal_delay))
-                print("ACTION RECORD -> ",end="")
-                print(self.action_group)
+                #print("ACTION RECORD -> ",end="")
+                #print(self.action_group)
 
                 #print(self.rulelist)
-                print("遅延 => ",end="")
-                print(self.rulelist.filter(self.packetlist)[0])
-                self.dump(delay)
-                
+                #print("遅延 => ",end="")
+                #print(self.rulelist.filter(self.packetlist)[0])
+                self.dump(reordered_rulelist,reward)
 
-        else:
-            self.episode_reward += reward
+        return self.transform_rulelist_to_state(),reward,done,{}
 
-        #print(reward)
-        return self._transform_rulelist_to_state(),reward,done,{}
 
-    
-    #====================================
-    #= ルールリストを状態の構造へ変換する関数 =
-    #====================================
-    def _transform_rulelist_to_state(self):
-        state = []            
-        
-        for i in range(len(self.rulelist)):
-            element = []
-            #先頭に評価型を数値として追加
-            if self.rulelist[i].evaluate == "Accept":
-                element.append(-2)
-            else:
-                element.append(-1)
-            #重みを追加
-            element.append(self.rulelist[i].weight)
+    #========================================
+    #= 現在のグラフを状態の構造へ変換する関数 =
+    #========================================
+    def transform_rulelist_to_state(self):
 
-            #残りの要素を追加
-            element.extend(self.rulelist[i].bit_string_num)
 
-            state.append(element)
+        # 除去後の現在のグラフを構築
+        cutted_graph = self.init_graph.create_cutted_graph()
+
+        cutted_graph_nodes = list(cutted_graph.nodes)
+        cutted_graph_edges = list(cutted_graph.edges)
+
+        node_list = [0] * self.observation_eachlength
+        node_weight_list = [0] * self.observation_eachlength
+        for i in range(len(cutted_graph_nodes)):
+            # ノード一覧を構成
+            node_list[i] = cutted_graph_nodes[i]
+            #グラフノードの重みリストを構築
+            node_weight_list[i] = self.rulelist[cutted_graph_nodes[i]-1]._weight
+
+
+        #エッジリストを構築
+        edge_list_from = [0] * self.observation_eachlength
+        edge_list_to = [0] * self.observation_eachlength
+
+        for i in range(len(list(cutted_graph.edges))):
+            edge_list_from[i] = (cutted_graph_edges[i][0])
+            edge_list_to[i] = (cutted_graph_edges[i][1])
+
+        #print(node_list)
+        #print(node_weight_list)
+        #print(edge_list_from)
+        #print(edge_list_to)
+
+        state = [node_list,node_weight_list,edge_list_from,edge_list_to]
+        #print(state)
 
         return state
 
-
-    
     #====================================
     #=         報酬を計算する関数          =
     #====================================
@@ -324,28 +212,27 @@ class rulemodel_env(gym.core.Env):
         return ret
 
 
-    def dump(self,delay):
-        
-        with open("Dump/Rule_"+str(self.start_time)+"_["+str(delay)+"]_"+str(time.time()),"w",encoding="utf-8",newline="\n") as write_file:
-            
-            for i in range(len(self.rulelist)):
-                if self.rulelist[i].evaluate == "Accept":
-                    write_file.write("Accept\t"+self.rulelist[i].bit_string+"\n")
-                elif self.rulelist[i].evaluate == "Deny":
-                    write_file.write("Deny\t"+self.rulelist[i].bit_string+"\n")
+    def dump(self,rulelist,reward):
 
-    
+        with open("Dump/Rule_"+str(self.start_time)+"_["+str(reward)+"]_"+str(time.time()),"w",encoding="utf-8",newline="\n") as write_file:
+
+            for i in range(len(rulelist)):
+                if rulelist[i].evaluate == "Accept":
+                    write_file.write("Accept\t"+rulelist[i].bit_string+"\n")
+                elif rulelist[i].evaluate == "Deny":
+                    write_file.write("Deny\t"+rulelist[i].bit_string+"\n")
+
     #====================================
     #=             未使用関数             =
     #====================================
-    
 
-    def _render(self):
+
+    def render(self):
         pass
 
-    
-    def _close(self):
+
+    def close(self):
         pass
-        
-    def _seed(self):
+
+    def seed(self):
         pass

@@ -175,10 +175,15 @@ if __name__ == "__main__":
 
     model = keras.models.Sequential([
         keras.layers.Flatten(input_shape=(1,) + env.observation_space.shape),
+        keras.layers.Dropout(0.2),
         keras.layers.Dense(256,activation="elu"),
+        keras.layers.Dropout(0.5),
         keras.layers.Dense(256,activation="elu"),
+        keras.layers.Dropout(0.5),
         keras.layers.Dense(256,activation="elu"),
+        keras.layers.Dropout(0.5),
         keras.layers.Dense(256,activation="elu"),
+        keras.layers.Dropout(0.5),
         keras.layers.Dense(256,activation="elu"),
         keras.layers.Dense(nb_actions,activation="softmax"),
     ])

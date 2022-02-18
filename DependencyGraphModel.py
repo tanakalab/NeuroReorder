@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 #*          グラフ構築と各種並べ替え法実行クラス              *
 #***********************************************
 class DependencyGraphModel:
-    def __init__(self,rulelist):
+    def __init__(self,rulelist,graph_coloring=False):
         rule_list = rulelist
 
         # 各手法の整列済みリスト（ルール番号のリスト）
@@ -25,40 +25,47 @@ class DependencyGraphModel:
         edges = []
         for i in reversed(range(len(rule_list))):
             for j in reversed(range(0,i)):
-
+                # 重複があるならエッジを追加
                 if rule_list[j].is_overlap(rule_list[i]):
-                    if rule_list[j].is_dependent(rule_list[i]):
-                        if rule_list[j].is_cover(rule_list[i]):
-                            #print("ルール[%d]とルール[%d]は従属かつ被覆関係" % (i+1 , j+1))
+                    color = "black"
 
-                            new_edge = (i+1,j+1)
-                            edges.append(new_edge)
+                    # カラーリングをするなら重複ビット数に応じてカラーリング
+                    if graph_coloring:
+                        #重複ビット集合を示すビット列
+                        overlap_bit_string = rule_list[j].match_packet_bit_string(rule_list[i])
+
+                        if rule_list[j].is_dependent(rule_list[i]):
+                            if rule_list[j].is_cover(rule_list[i]):
+                                #print("ルール[%d]とルール[%d]は従属かつ被覆関係" % (i+1 , j+1))
+                                color = "r"
+                            else:
+                                #print("ルール[%d]とルール[%d]は従属関係" % (i+1 , j+1))
+                                color = "r"
+                        elif rule_list[j].is_cover(rule_list[i]):
+                            color = "b"
+                            #print("ルール[%d]とルール[%d]は被覆関係" % (i+1 , j+1))
                         else:
-                            #print("ルール[%d]とルール[%d]は従属関係" % (i+1 , j+1))
+                            color = "b"
+                            #print("ルール[%d]とルール[%d]は重複関係" % (i+1 , j+1))
 
-                            new_edge = (i+1,j+1)
-                            edges.append(new_edge)
+                        #マスクの数を数える
+                        mask_num = overlap_bit_string.count("*")
+                        if mask_num <=24:
+                            if color == "r":
+                                color = "lightsalmon"
+                            else:
+                                color = "lightblue"
+                        elif mask_num >=48:
+                            if color == "r":
+                                color = "purple"
+                            else:
+                                color = "black"
 
-                    elif rule_list[j].is_cover(rule_list[i]):
-                        #print("ルール[%d]とルール[%d]は被覆関係" % (i+1 , j+1))
-                        new_edge = (i+1,j+1)
-                        edges.append(new_edge)
-                    else:
-                        #print("ルール[%d]とルール[%d]は重複関係" % (i+1 , j+1))
-                        new_edge = (i+1,j+1)
-                        edges.append(new_edge)
+                    new_edge = (i+1,j+1,color)
+                    edges.append(new_edge)
 
-                        """
-                        for x in edges:
-                        if x[1] == new_edge[0]:
-                        max = range(len(edges))
-                        for k in max:
-                        if edges[k][0] == x[0] and edges[k][1] == new_edge[1]:
-                        edges.pop(k)
-                        break
-                        """
         for edge in edges:
-            Graph.add_edge(edge[0],edge[1])
+            Graph.add_edge(edge[0],edge[1],color=edge[2])
 
         Graph2 = nx.DiGraph()
         for i in range(len(rule_list)):
@@ -67,8 +74,8 @@ class DependencyGraphModel:
         for i in range(len(edges)):
             Graph.remove_edge(edges[i][0],edges[i][1])
             if not nx.has_path(Graph,source=edges[i][0],target=edges[i][1]):
-                Graph2.add_edge(edges[i][0],edges[i][1])
-            Graph.add_edge(edges[i][0],edges[i][1])
+                Graph2.add_edge(edges[i][0],edges[i][1],color=edges[i][2])
+            Graph.add_edge(edges[i][0],edges[i][1],color=edges[i][2])
 
         #print(edges)
 
@@ -123,7 +130,9 @@ class DependencyGraphModel:
 
     def plot_graph(self,save=False):
         pos = nx.nx_pydot.pydot_layout(self.graph,prog='dot')
-        nx.draw_networkx(self.graph,pos,node_color=["y"])
+
+        edge_color = [edge["color"] for edge in self.graph.edges.values()]
+        nx.draw_networkx(self.graph,pos,edge_color=edge_color,node_color=["y"])
         if save:
             plt.savefig("figDump.png")
 

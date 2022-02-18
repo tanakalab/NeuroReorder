@@ -176,21 +176,16 @@ if __name__ == "__main__":
     model = keras.models.Sequential([
         keras.layers.Flatten(input_shape=(1,) + env.observation_space.shape),
         keras.layers.Dropout(0.2),
-        keras.layers.Dense(256,activation="elu"),
+        keras.layers.Dense(64,activation="relu"),
         keras.layers.Dropout(0.5),
-        keras.layers.Dense(256,activation="elu"),
+        keras.layers.Dense(64,activation="relu"),
         keras.layers.Dropout(0.5),
-        keras.layers.Dense(256,activation="elu"),
-        keras.layers.Dropout(0.5),
-        keras.layers.Dense(256,activation="elu"),
-        keras.layers.Dropout(0.5),
-        keras.layers.Dense(256,activation="elu"),
         keras.layers.Dense(nb_actions,activation="softmax"),
     ])
 
     model.summary()
     #経験蓄積メモリの定義
-    memory = SequentialMemory(limit=50000, window_length=1,ignore_episode_boundaries=True)
+    memory = SequentialMemory(limit=100000, window_length=1,ignore_episode_boundaries=True)
     #ポリシの選択
     #policy = EpsGreedyQPolicy(eps=0.05)
     #policy = BoltzmannQPolicy(tau=1.,clip=(-500.,500.))
@@ -205,7 +200,7 @@ if __name__ == "__main__":
             nb_actions=nb_actions,
             memory=memory,
             gamma=.95,
-            nb_steps_warmup=100,
+            nb_steps_warmup=10000,
             batch_size=32,
             train_interval=5,
             target_model_update=5,

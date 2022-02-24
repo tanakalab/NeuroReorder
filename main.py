@@ -172,13 +172,29 @@ if __name__ == "__main__":
     nb_actions = env.action_space.n
 
     print(env.observation_space.shape)
-
+    """
     model = keras.models.Sequential([
         keras.layers.Flatten(input_shape=(1,) + env.observation_space.shape),
         keras.layers.Dropout(0.2),
         keras.layers.Dense(64,activation="relu"),
         keras.layers.Dropout(0.5),
         keras.layers.Dense(64,activation="relu"),
+        keras.layers.Dropout(0.5),
+        keras.layers.Dense(nb_actions,activation="softmax"),
+    ])
+    """
+    model = keras.models.Sequential([
+        keras.layers.Flatten(input_shape=(1,) + env.observation_space.shape),
+        keras.layers.Dropout(0.2),
+        keras.layers.Dense(256,activation="relu"),
+        keras.layers.Dropout(0.5),
+        keras.layers.Dense(256,activation="relu"),
+        keras.layers.Dropout(0.5),
+        keras.layers.Dense(256,activation="relu"),
+        keras.layers.Dropout(0.5),
+        keras.layers.Dense(256,activation="relu"),
+        keras.layers.Dropout(0.5),
+        keras.layers.Dense(256,activation="relu"),
         keras.layers.Dropout(0.5),
         keras.layers.Dense(nb_actions,activation="softmax"),
     ])
@@ -201,7 +217,7 @@ if __name__ == "__main__":
             memory=memory,
             gamma=.95,
             nb_steps_warmup=10000,
-            batch_size=32,
+            batch_size=128,
             train_interval=5,
             target_model_update=5,
             policy=policy

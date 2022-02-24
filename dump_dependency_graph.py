@@ -41,4 +41,4 @@ if __name__ == "__main__":
     plt.figure(figsize=(100,100))
 
     #graph.show_graph()
-    graph.plot_graph(save=True)
+    graph.plot_graph(save=True,file_name="Dump/" + args.rules.split('/')[-1])

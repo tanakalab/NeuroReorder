@@ -128,13 +128,13 @@ class DependencyGraphModel:
         return return_key
 
 
-    def plot_graph(self,save=False):
+    def plot_graph(self,save=False,file_name="figDump"):
         pos = nx.nx_pydot.pydot_layout(self.graph,prog='dot')
 
         edge_color = [edge["color"] for edge in self.graph.edges.values()]
         nx.draw_networkx(self.graph,pos,edge_color=edge_color,node_color=["y"])
         if save:
-            plt.savefig("figDump.png")
+            plt.savefig(file_name + ".png")
 
 
     def show_graph(self):

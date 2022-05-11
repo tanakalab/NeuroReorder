@@ -21,6 +21,21 @@ parser.add_argument(
     type=str,
     help="読み込むルールファイルのパス. ClassBenchルール変換プログラムの6番を使用し,assign_evaluation_to_rulelist.pyで評価型を付与すること.")
 
+parser.add_argument(
+    "--figsize",
+    type=int,
+    default=100,
+    help="")
+
+#normal
+#only_edge
+parser.add_argument(
+    "--mode",
+    type=str,
+    default="normal",
+    help="")
+
+
 if __name__ == "__main__":
 
     args = parser.parse_args()
@@ -36,9 +51,10 @@ if __name__ == "__main__":
                 break
             rule_list.append(Rule(rule[0],rule[1]))
 
+
     graph = DependencyGraphModel(rule_list,graph_coloring=True)
 
-    plt.figure(figsize=(100,100))
+    plt.figure(figsize=(args.figsize,args.figsize))
 
     #graph.show_graph()
-    graph.plot_graph(save=True,file_name="Dump/" + args.rules.split('/')[-1])
+    graph.plot_graph(save=True,file_name="Dump/" + args.rules.split('/')[-1],mode=args.mode)

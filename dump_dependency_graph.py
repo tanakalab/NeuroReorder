@@ -22,6 +22,11 @@ parser.add_argument(
     help="読み込むルールファイルのパス. ClassBenchルール変換プログラムの6番を使用し,assign_evaluation_to_rulelist.pyで評価型を付与すること.")
 
 parser.add_argument(
+    "packets",
+    type=str,
+    help="読み込むパケットファイルのパス. ")
+
+parser.add_argument(
     "--figsize",
     type=int,
     default=100,
@@ -50,9 +55,18 @@ if __name__ == "__main__":
             if not rule:
                 break
             rule_list.append(Rule(rule[0],rule[1]))
+    #パケットリストを形成
+    packet_list = []
+    
+    with open(args.packets,mode="r") as packetlist_file:
+        while packetlist_file:
+            packet = "".join(packetlist_file.readline().split())
+            #print(packet)
+            if not packet:
+                break
+            packet_list.append(packet)
 
-
-    graph = DependencyGraphModel(rule_list,graph_coloring=True)
+    graph = DependencyGraphModel(rule_list,packet_list,graph_coloring=True)
 
     plt.figure(figsize=(args.figsize,args.figsize))
 

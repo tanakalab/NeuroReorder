@@ -9,8 +9,15 @@ import matplotlib.pyplot as plt
 #*          グラフ構築と各種並べ替え法実行クラス              *
 #***********************************************
 class DependencyGraphModel:
-    def __init__(self,rulelist,graph_coloring=False):
+    def __init__(self,rulelist,packetlist=None,graph_coloring=False):
         rule_list = rulelist
+        packet_list = packetlist
+
+        if not packet_list is None:
+            rule_list.filter(packet_list)
+            for i in range(len(rule_list)):
+                print("%d番目の重みは%d"%(i,rule_list[i]._weight))
+
 
         # 各手法の整列済みリスト（ルール番号のリスト）
         self.sgms_reordered_nodelist = []
@@ -69,7 +76,7 @@ class DependencyGraphModel:
 
         Graph2 = nx.DiGraph()
         for i in range(len(rule_list)):
-            Graph2.add_node(i+1)
+            Graph2.add_node(i+1,color="grey",size=rule_list[i]._weight)
 
         for i in range(len(edges)):
             Graph.remove_edge(edges[i][0],edges[i][1])
@@ -83,6 +90,8 @@ class DependencyGraphModel:
         self.graph = Graph2
 
         self.removed_nodelist = []
+
+        #print(self.graph.nodes.data())
 
     # souce -> 部分木の根
     def sum_of_weight_in_subgraph(self,src):
@@ -132,15 +141,15 @@ class DependencyGraphModel:
         pos = nx.nx_pydot.pydot_layout(self.graph,prog='dot')
 
         if mode=="only_edge":
-            node_size=1
             font_size=0
         else:
-            node_size=300
             font_size=12
 
 
+        node_color = [node["color"] for node in self.graph.nodes.values()]
         edge_color = [edge["color"] for edge in self.graph.edges.values()]
-        nx.draw_networkx(self.graph,pos,edge_color=edge_color,node_color=["y"],node_size=node_size,font_size=font_size)
+        node_size = [node["size"]*10 for node in self.graph.nodes.values()]
+        nx.draw_networkx(self.graph,pos,edge_color=edge_color,node_color=node_color,node_size=node_size,font_size=font_size)
         if save:
             plt.savefig(file_name + ".png")
 

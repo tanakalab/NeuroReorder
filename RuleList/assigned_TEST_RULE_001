@@ -1,6 +1,0 @@
-Accept	*1**1
-Deny	00**1
-Deny	**011
-Accept	**101
-Deny	*0*11
-Accept	*11*0

@@ -54,6 +54,12 @@ parser.add_argument(
     default="DQN",
     help="使用アルゴリズム.DQNまたはSARSA.")
 
+parser.add_argument(
+    "--experiment_title",
+    type=str,
+    default="EXPERIMENT",
+    help="実験名.ファイルの出力名に使用します.")
+
 
 if __name__ == "__main__":
 
@@ -100,7 +106,7 @@ if __name__ == "__main__":
     #print("遅延合計値 = [%d]\n\nAll Packet is successfully filtered." % res1[0])
     #print(res1[1])
 
-    rule_list.compute_weight(packet_list)
+    rule_list.compute_weight(packet_list,packet_list)
     """
     for i in rule_list:
         print("%d,"%(i._weight),end="")
@@ -158,7 +164,7 @@ if __name__ == "__main__":
             'packetlist':packet_list,
             'graph':graph,
             'max_steps':max_steps,
-            'max_stay':10
+            'experiment_title':args.experiment_title
         },
     )
 
@@ -176,11 +182,9 @@ if __name__ == "__main__":
     model = keras.models.Sequential([
         keras.layers.Flatten(input_shape=(1,) + env.observation_space.shape),
         keras.layers.Dropout(0.2),
-        keras.layers.Dense(64,activation="elu"),
+        keras.layers.Dense(512,activation="relu",kernel_initializer=keras.initializers.TruncatedNormal(),kernel_regularizer=keras.regularizers.l2(0.001)),
         keras.layers.Dropout(0.5),
-        keras.layers.Dense(64,activation="elu"),
-        keras.layers.Dropout(0.5),
-        keras.layers.Dense(64,activation="elu"),
+        keras.layers.Dense(512,activation="relu",kernel_initializer=keras.initializers.TruncatedNormal(),kernel_regularizer=keras.regularizers.l2(0.001)),
         keras.layers.Dropout(0.5),
         keras.layers.Dense(nb_actions,activation="softmax"),
     ])
@@ -207,7 +211,7 @@ if __name__ == "__main__":
     #経験蓄積メモリの定義
     memory = SequentialMemory(limit=500000, window_length=1,ignore_episode_boundaries=True)
     #ポリシの選択
-    #policy = EpsGreedyQPolicy(eps=0.05)
+    #policy = EpsGreedyQPolicy(eps=0.9)
     #policy = BoltzmannQPolicy(tau=1.,clip=(-500.,500.))
     policy = LinearAnnealedPolicy(EpsGreedyQPolicy(),attr='eps',value_max=.9,value_min=.1,value_test=.05,nb_steps=max_all_steps/10*9)
     #Agent作成
@@ -220,10 +224,10 @@ if __name__ == "__main__":
             nb_actions=nb_actions,
             memory=memory,
             gamma=.95,
-            nb_steps_warmup=10000,
+            nb_steps_warmup=5000,
             batch_size=128,
-            train_interval=2,
-            target_model_update=2,
+            train_interval=5,
+            target_model_update=5,
             policy=policy
         )
     elif args.algo == "SARSA":

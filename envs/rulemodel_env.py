@@ -33,13 +33,12 @@ class rulemodel_env(gym.core.Env):
     #====================================
     #=            クラス初期化            =
     #====================================
-    def __init__(self,rulelist,packetlist,graph,max_steps,max_stay):
+    def __init__(self,rulelist,packetlist,graph,max_steps,experiment_title):
         # パラメータを設定
         self.base_rulelist = rulelist
         self.rulelist = rulelist
         self.packetlist = packetlist
         self.max_steps = max_steps
-        self.max_stay = max_stay
         self.init_graph = graph
         self.calc_graph = None
 
@@ -47,6 +46,9 @@ class rulemodel_env(gym.core.Env):
         #self.stay_num = 0
         #self.before_delay = 0
         #self.delay = 0
+        self.dump_count = 1
+        self.experiment_title = experiment_title
+
 
         self.max_reward = -9999999999
         #self.episode_reward = 0
@@ -115,10 +117,14 @@ class rulemodel_env(gym.core.Env):
 
         # 0 -> Sub Graph Merging
         if action == 0:
-            self.calc_graph.single__sub_graph_mergine()
+            chosed_nodes = self.calc_graph.single__sub_graph_mergine()
+            self.action_group.append(("SGM",[chosed_nodes]))
         # 1 -> Hikage Method
         elif action == 1:
-            self.calc_graph.single__hikage_method()
+            chosed_nodes = self.calc_graph.single__hikage_method()
+            self.action_group.append(("Hikage",chosed_nodes))
+
+
 
         #print(list(self.calc_graph.graph.nodes))
         #print(list(self.calc_graph.removed_nodelist))
@@ -140,8 +146,7 @@ class rulemodel_env(gym.core.Env):
             if reward > self.max_reward:
                 #if self.episode_reward > self.max_reward:
                 self.max_reward = reward
-                print("\n\nNEW_REWARD -->> %f"%(self.max_reward))
-                #print("ACTION RECORD -> ",end="")
+                print("\n\nNEW_REWARD -->>\t %d"%(self.max_reward))
                 #print(self.action_group)
 
                 #print(self.rulelist)
@@ -214,13 +219,19 @@ class rulemodel_env(gym.core.Env):
 
     def dump(self,rulelist,reward):
 
-        with open("Dump/Rule_"+str(self.start_time)+"_["+str(reward)+"]_"+str(time.time()),"w",encoding="utf-8",newline="\n") as write_file:
+        with open("Dump/"+self.experiment_title+"_Rule_{"+str(self.dump_count)+"}_["+str(reward)+"]","w",encoding="utf-8",newline="\n") as write_file:
 
             for i in range(len(rulelist)):
                 if rulelist[i].evaluate == "Accept":
                     write_file.write("Accept\t"+rulelist[i].bit_string+"\n")
                 elif rulelist[i].evaluate == "Deny":
                     write_file.write("Deny\t"+rulelist[i].bit_string+"\n")
+
+        with open("Dump/"+self.experiment_title+"_Actions_{"+str(self.dump_count)+"}","w",encoding="utf-8",newline="\n") as write_file:
+            for action in self.action_group:
+                write_file.write(str(action[0]) + "\t" + " ".join(map(str,action[1])) + "\n")
+
+        self.dump_count += 1
 
     #====================================
     #=             未使用関数             =

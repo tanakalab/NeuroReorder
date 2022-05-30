@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 #*          グラフ構築と各種並べ替え法実行クラス              *
 #***********************************************
 class DependencyGraphModel:
-    def __init__(self,rulelist,packetlist=None,graph_coloring=False):
+    def __init__(self,rulelist,packetlist=None):
         rule_list = rulelist
         packet_list = packetlist
 
@@ -36,47 +36,55 @@ class DependencyGraphModel:
                 if rule_list[j].is_overlap(rule_list[i]):
                     color = "black"
 
-                    # カラーリングをするなら重複ビット数に応じてカラーリング
-                    if graph_coloring:
                         #重複ビット集合を示すビット列
-                        overlap_bit_string = rule_list[j].match_packet_bit_string(rule_list[i])
+                    overlap_bit_string = rule_list[j].match_packet_bit_string(rule_list[i])
 
-                        if rule_list[j].is_dependent(rule_list[i]):
-                            if rule_list[j].is_cover(rule_list[i]):
-                                #print("ルール[%d]とルール[%d]は従属かつ被覆関係" % (i+1 , j+1))
-                                color = "r"
-                            else:
-                                #print("ルール[%d]とルール[%d]は従属関係" % (i+1 , j+1))
-                                color = "r"
-                        elif rule_list[j].is_cover(rule_list[i]):
-                            color = "b"
-                            #print("ルール[%d]とルール[%d]は被覆関係" % (i+1 , j+1))
+                    if rule_list[j].is_dependent(rule_list[i]):
+                        if rule_list[j].is_cover(rule_list[i]):
+                            #print("ルール[%d]とルール[%d]は従属かつ被覆関係" % (i+1 , j+1))
+                            color = "r"
+                            #color = "r"
                         else:
-                            color = "b"
-                            #print("ルール[%d]とルール[%d]は重複関係" % (i+1 , j+1))
-
+                            #print("ルール[%d]とルール[%d]は従属関係" % (i+1 , j+1))
+                            color = "r"
+                            #color = "r"
                         #マスクの数を数える
                         mask_num = overlap_bit_string.count("*")
                         if mask_num <=24:
                             if color == "r":
+                                #color = "lightgrey"
                                 color = "lightsalmon"
                             else:
                                 color = "lightblue"
                         elif mask_num >=48:
                             if color == "r":
+                                #color = "black"
                                 color = "purple"
                             else:
                                 color = "black"
 
-                    new_edge = (i+1,j+1,color)
-                    edges.append(new_edge)
-
+                        new_edge = (i+1,j+1,color)
+                        edges.append(new_edge)
+                    """
+                    elif rule_list[j].is_cover(rule_list[i]):
+                        continue
+                        #color = "b"
+                        #print("ルール[%d]とルール[%d]は被覆関係" % (i+1 , j+1))
+                    else:
+                        continue
+                            #color = "b"
+                        #print("ルール[%d]とルール[%d]は重複関係" % (i+1 , j+1))
+                    """
         for edge in edges:
             Graph.add_edge(edge[0],edge[1],color=edge[2])
 
+
         Graph2 = nx.DiGraph()
         for i in range(len(rule_list)):
-            Graph2.add_node(i+1,color="grey",size=rule_list[i]._weight)
+            if rule_list[i]._weight == 0:
+                Graph2.add_node(i+1,color="black",size=1)
+            else:
+                Graph2.add_node(i+1,color="red",size=rule_list[i]._weight)
 
         for i in range(len(edges)):
             Graph.remove_edge(edges[i][0],edges[i][1])
@@ -91,6 +99,8 @@ class DependencyGraphModel:
 
         self.removed_nodelist = []
 
+        #print("EDGES -> ",end="")
+        #print(dict(self.graph.edges()))
         #print(self.graph.nodes.data())
 
     # souce -> 部分木の根
@@ -140,12 +150,17 @@ class DependencyGraphModel:
     def plot_graph(self,save=False,file_name="figDump",mode="normal"):
         pos = nx.nx_pydot.pydot_layout(self.graph,prog='dot')
 
-        if mode=="only_edge":
-            font_size=0
-        else:
-            font_size=12
+        #if mode=="only_edge":
+        #    font_size=0
+        #else:
+        #    font_size=12
+        font_size=1
 
 
+        if mode=="only_overlap":
+            dependent_edge = [edge[0:2] for edge in self.graph.edges(data=True) if edge[2]["color"] in ["b","lightblue","black"]]
+            print(dependent_edge)
+            self.graph.remove_edges_from(dependent_edge)
         node_color = [node["color"] for node in self.graph.nodes.values()]
         edge_color = [edge["color"] for edge in self.graph.edges.values()]
         node_size = [node["size"]*10 for node in self.graph.nodes.values()]
@@ -191,7 +206,7 @@ class DependencyGraphModel:
         copied_graph = self.copied_graph()
         for element in self.removed_nodelist:
             copied_graph.remove_node(element)
-
+        #print(copied_graph.edges())
         _next = list(copied_graph.nodes)
 
         while True:
@@ -200,22 +215,26 @@ class DependencyGraphModel:
             #print(_next,end="")
             if choice == -1:
                 for i in _next:
+                    #print("\t[r[%d]]"%(choice-1))
                     self.sgms_reordered_nodelist.append(i)
                     self.removed_nodelist.append(i)
-                    return
+                    return i
                 #print("BREAK.")
                 break
 
             #print(" -> ",end="")
-            #print("{={%d}=} -> "%(choice),end="")
+            #print("{choice={%d}} -> "%(choice),end="")
+            #print(list(nx.shortest_path(copied_graph,target=choice).keys()),end="")
+
+
             _next = list(copied_graph.succ[choice])
-            #print(_next)
+            #print(_next,end="")
             if len(_next) <= 0:
-                #print("\t|r[%d]|"%(choice-1),end="")
+                #print("\t|r[%d]|"%(choice))
                 self.sgms_reordered_nodelist.append(choice)
                 self.removed_nodelist.append(choice)
                 #_next = list(self.graph.nodes)
-                return
+                return choice
             #print("")
 
         return
@@ -232,7 +251,6 @@ class DependencyGraphModel:
             ret_graph.add_edge(edge[0],edge[1])
 
 
-        #print(list(ret_graph.nodes))
         return ret_graph
 
     def subgraph_nodesets(self,graph):
@@ -370,7 +388,7 @@ class DependencyGraphModel:
 
 
 
-            return
+            return [element[0] for element in addlist]
             #Ns[index_Ns] = Ns[index_Ns][:index_N]
 
             #if len(Ns[index_Ns]) <= 0:

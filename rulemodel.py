@@ -48,8 +48,8 @@ class Rule:
         #重み(フィルタリング時に決定)
         self._weight = 0
 
-            
-            
+
+
     #====================================
     #=     合致するかどうか確認する関数      =
     #====================================
@@ -57,7 +57,7 @@ class Rule:
     # 返り値 -> True or False
     def match(self,bit_string):
         assert len(self.bit_string) == len(bit_string),"入力されたパケットのbit列の長さがルールのbit列と異なります."
-        
+
         for i in range(len(self.bit_string)):
             if self.bit_string[i] != "*":
                 if self.bit_string[i] != bit_string[i]:
@@ -95,7 +95,7 @@ class Rule:
                 if self.bit_string[i] != rule.bit_string[i]:
                     if rule.bit_string[i] == "*":
                         return False
-                    
+
             return True
 
     #====================================
@@ -147,7 +147,7 @@ class Rule:
         for i in range(ref_position,len(bit_string)):
             if bit_string[i] == "*":
                 zero = list(bit_string)
-                zero[i] = "0" 
+                zero[i] = "0"
                 ret_zero = self.match_packet_list("".join(zero),i)
                 one = list(bit_string)
                 one[i] = "1"
@@ -178,13 +178,13 @@ class Rule:
                 ret += self.bit_string[i]
             #print(ret)
         return ret
-    
+
     #====================================
     #=             長さ出力              =
     #====================================
     def __len__(self):
         return len(self.bit_string)
-    
+
     #====================================
     #=             要素出力              =
     #====================================
@@ -220,12 +220,12 @@ class RuleList:
     #=     各ルールの重みを計算する関数      =
     #====================================
     def compute_weight(self,packet_list,mode="hikage"):
-        
+
         for i in self.rule_list:
             i._weight = 0
 
-        
-        if mode == "hikage":    
+
+        if mode == "hikage":
             for i in range(len(packet_list)):
                 for j in range(len(self.rule_list)):
                     if self.rule_list[j].match(packet_list[i]):
@@ -233,9 +233,9 @@ class RuleList:
         elif mode == "sgm":
             for i in range(len(packet_list)):
                 for j in range(len(self.rule_list)):
-                    self.rule_list[j].match(packet_list[i])    
+                    self.rule_list[j].match(packet_list[i])
 
-            
+
 
     #====================================
     #=        パケット分類を行う関数        =
@@ -251,10 +251,10 @@ class RuleList:
         for i in range(len(self.rule_list)):
             match_number.append(0)
 
-        
+
         #print文用の区切り値
         lap = 10**(len(str(len(packet_list))) - 2)
-        
+
 
         #パケットの数だけループ
         for i in range(len(packet_list)):
@@ -262,7 +262,7 @@ class RuleList:
             # lapの値で区切って経過出力
             #if i % lap == 0:
             #    print("%d / %d is filtered."% (i,len(packet_list)))
-            
+
 
             #遅延
             delay = 0
@@ -281,11 +281,11 @@ class RuleList:
                 match_number[j] += 1
                 if is_print_position:
                     print("%s\tPacket[%d] is matched Rule[%d]. Delay = [%d]" % (self[match_position].evaluate,i,match_position,delay))
-                    match_list.append(self[match_position].evaluate)
+                match_list.append(self[match_position].evaluate)
             else: #どこにも合致しなかった場合
                 if is_print_position:
                     print("%s\tPacket[%d] is matched Default rule. Delay = [%d]" % (self[match_position].evaluate,i,delay))
-                    match_list.append("Deny")
+                match_list.append("Deny")
                 match_default_rule_num += 1
             delay_all += delay
         if is_print_detail:
@@ -297,7 +297,7 @@ class RuleList:
     #====================================
     #=           各種アクション           =
     #====================================
-    
+
     # アクション Move
     # 引数 -> rule_pos 移動させるルールの添字番号
     #     -> destination 移動先の添字番号
@@ -311,10 +311,10 @@ class RuleList:
             if self.rule_list[rule_pos].is_dependent(self.rule_list[i]):
                 #print("従属関係が破壊されました")
                 return False
-        
-        
+
+
         del self.rule_list[rule_pos]
-        
+
         if rule_pos < destination:
             self.rule_list.insert(destination-1,x)
         else:
@@ -356,7 +356,7 @@ class RuleList:
         return False
 
     # 従属関係を除去する関数
-    # 引数 -> rule1_pos rule2_pos ルールの添字番号(1は上位ルール,2は下位ルール) 
+    # 引数 -> rule1_pos rule2_pos ルールの添字番号(1は上位ルール,2は下位ルール)
     # 返り値 -> なし
     # 重複／従属関係を除去する，
     # 重複パケットを表示 -> 下位ルールの重複部分を削除
@@ -417,7 +417,7 @@ class RuleList:
             else: #forループが正常終了したならwhileループを終える処理に入る
                 end = True
             #print(cutted_rule_list)
-                
+
             #forを正常に抜ける場合 -> マスクが1つしかないルールを評価していて終端に達した or マスクの無いルール -> 重みが0のルール
             #前者の場合1つ目のマスクがあった場所のbitを重複パケットと異なるものにする
             if end:
@@ -445,9 +445,9 @@ class RuleList:
                     break
             else:
                 target_list.insert(rule2_pos,ins_rule)
-        
+
         #print(self)
-        
+
         return target_list
 
     def bind(self,i,r):
@@ -465,8 +465,8 @@ class RuleList:
     #=   一様分布の場合の遅延を計算する関数   =（未実装）
     #====================================
     def compute_delay_average(self):
-        return        
-    
+        return
+
     #====================================
     #=             長さ出力              =
     #====================================
@@ -499,7 +499,7 @@ class RuleList:
             if self.is_print_match_packet:
                 print("ルール[%d]に合致するパケット ->" % i , self.rule_list[i].match_packet_list(self.rule_list[i].bit_string,0))
             for j in reversed(range(0,i)):
-                
+
                 if self.rule_list[j].is_overlap(self.rule_list[i]):
                     count_mask = self.rule_list[j].count_mask
                     super_score += count_mask
@@ -551,4 +551,3 @@ class RuleList:
             del self.rule_list[i]
             for x in target_list:
                 self.rule_list.insert(i,x)
-

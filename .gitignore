@@ -1,5 +1,5 @@
-Dump/
-Datas/
+Dump/*
+Datas/*
 result.hdf5
 
 

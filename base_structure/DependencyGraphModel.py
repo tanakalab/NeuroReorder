@@ -1,84 +1,57 @@
+# 従属グラフ構築と各種並べ替え法に関する処理をまとめたクラス
+
+# ------------------------------------------------------------------
+# -----                      ライブラリ定義                     -----
+# ------------------------------------------------------------------
 import math
-import argparse
-from rulemodel import *
-import datetime
+# グラフ関連
 import networkx as nx
 import matplotlib.pyplot as plt
+# 自前環境
+from base_structure.rulemodel import *
 
-#***********************************************
-#*          グラフ構築と各種並べ替え法実行クラス              *
-#***********************************************
+
 class DependencyGraphModel:
+
+    #=========================================
+    #                 初期化
+    #=========================================
     def __init__(self,rulelist,packetlist=None):
+
         rule_list = rulelist
         packet_list = packetlist
 
-        if not packet_list is None:
-            rule_list.filter(packet_list)
-            for i in range(len(rule_list)):
-                print("%d番目の重みは%d"%(i,rule_list[i]._weight))
-
+        if not packetlist is None:
+            rulelist.compute_weight(packetlist)
 
         # 各手法の整列済みリスト（ルール番号のリスト）
         self.sgms_reordered_nodelist = []
         self.hikages_reordered_nodelist = []
 
 
-        #グラフ構築(ノード)
+        # グラフ構築(ノード)
         Graph = nx.DiGraph()
         for i in range(len(rule_list)):
             Graph.add_node(str(i+1))
-
+        # グラフ構築(エッジ)
         edges = []
         for i in reversed(range(len(rule_list))):
             for j in reversed(range(0,i)):
                 # 重複があるならエッジを追加
-                if rule_list[j].is_overlap(rule_list[i]):
-                    color = "black"
-
-                        #重複ビット集合を示すビット列
+                if rule_list[j].is_dependent(rule_list[i]):
+                    #重複ビット集合を示すビット列
                     overlap_bit_string = rule_list[j].match_packet_bit_string(rule_list[i])
+                    mask_num = overlap_bit_string.count("*")
+                    color = "r"
+                    if mask_num <=24:
+                        color = "lightsalmon"
+                    elif mask_num >=48:
+                        color = "purple"
 
-                    if rule_list[j].is_dependent(rule_list[i]):
-                        if rule_list[j].is_cover(rule_list[i]):
-                            #print("ルール[%d]とルール[%d]は従属かつ被覆関係" % (i+1 , j+1))
-                            color = "r"
-                            #color = "r"
-                        else:
-                            #print("ルール[%d]とルール[%d]は従属関係" % (i+1 , j+1))
-                            color = "r"
-                            #color = "r"
-                        #マスクの数を数える
-                        mask_num = overlap_bit_string.count("*")
-                        if mask_num <=24:
-                            if color == "r":
-                                #color = "lightgrey"
-                                color = "lightsalmon"
-                            else:
-                                color = "lightblue"
-                        elif mask_num >=48:
-                            if color == "r":
-                                #color = "black"
-                                color = "purple"
-                            else:
-                                color = "black"
+                    edges.append((i+1,j+1,color))
+                    Graph.add_edge(i+1,j+1,color=color)
 
-                        new_edge = (i+1,j+1,color)
-                        edges.append(new_edge)
-                    """
-                    elif rule_list[j].is_cover(rule_list[i]):
-                        continue
-                        #color = "b"
-                        #print("ルール[%d]とルール[%d]は被覆関係" % (i+1 , j+1))
-                    else:
-                        continue
-                            #color = "b"
-                        #print("ルール[%d]とルール[%d]は重複関係" % (i+1 , j+1))
-                    """
-        for edge in edges:
-            Graph.add_edge(edge[0],edge[1],color=edge[2])
-
-
+        # グラフ構築(重みを表現し推移辺を削除したグラフを改めて構築)
         Graph2 = nx.DiGraph()
         for i in range(len(rule_list)):
             if rule_list[i]._weight == 0:
@@ -92,100 +65,39 @@ class DependencyGraphModel:
                 Graph2.add_edge(edges[i][0],edges[i][1],color=edges[i][2])
             Graph.add_edge(edges[i][0],edges[i][1],color=edges[i][2])
 
-        #print(edges)
-
         self.rule_list = rule_list
         self.graph = Graph2
 
+        # 手法を適用しグラフから除去したノードリスト
         self.removed_nodelist = []
 
-        #print("EDGES -> ",end="")
-        #print(dict(self.graph.edges()))
-        #print(self.graph.nodes.data())
-
-    # souce -> 部分木の根
-    def sum_of_weight_in_subgraph(self,src):
-
-        sum_of_weight = 0
-        keys = []
-        dict = nx.shortest_path(self.graph,source=src)
-
-        #print(dict.keys(),end="")
-
-        for key in dict.keys():
-            #print("%d "%(self.rule_list[key-1]._weight),end="")
-            sum_of_weight += self.rule_list[key-1]._weight
-            keys.append(key)
-        #print("")
-
-        #if len(keys) <= 1:
-        #    return False
-        #print("ノード%dの重み平均：%f\t"%(src,sum_of_weight),end="")
-        #print(keys)
-        return (sum_of_weight,keys)
-
-    def decide_choice(self,keys):
-        _max = 0
-        return_key = -1
-        is_all_weight_is_zero = True
-        for i in keys:
-            ret = self.sum_of_weight_in_subgraph(i)
-            #if ret == False and len(keys) <= 1:
-            #    return False
-            #print("%d-"%(ret[0]),end="")
-            ave = ret[0] / len(ret[1])
-            if ave > _max:
-                _max = ave
-                return_key = i
-                is_all_weight_is_zero = False
-
-            #print("[%d:%d]"%(i,ret[0]),end="")
-        #print("")
-        #キーの重みがすべて0の場合は先頭の要素を選択
-        if is_all_weight_is_zero:
-            return keys[0]
-        return return_key
-
-
-    def plot_graph(self,save=False,file_name="figDump",mode="normal"):
-        pos = nx.nx_pydot.pydot_layout(self.graph,prog='dot')
-
-        #if mode=="only_edge":
-        #    font_size=0
-        #else:
-        #    font_size=12
-        font_size=1
-
-
-        if mode=="only_overlap":
-            dependent_edge = [edge[0:2] for edge in self.graph.edges(data=True) if edge[2]["color"] in ["b","lightblue","black"]]
-            print(dependent_edge)
-            self.graph.remove_edges_from(dependent_edge)
+    #=======================================================
+    #                      グラフを出力
+    #=======================================================
+    def plot_graph(self,file_name="figDump"):
+        # 色とノードサイズをグラフデータとして構築
         node_color = [node["color"] for node in self.graph.nodes.values()]
         edge_color = [edge["color"] for edge in self.graph.edges.values()]
         node_size = [node["size"]*10 for node in self.graph.nodes.values()]
-        nx.draw_networkx(self.graph,pos,edge_color=edge_color,node_color=node_color,node_size=node_size,font_size=font_size)
-        if save:
-            plt.savefig(file_name + ".png")
+        # グラフを描く
+        pos = nx.nx_pydot.pydot_layout(self.graph,prog='dot')
+        nx.draw_networkx(self.graph,pos,edge_color=edge_color,node_color=node_color,node_size=node_size,font_size=1)
+        # 出力
+        plt.savefig(file_name + ".png")
 
-
-    def show_graph(self):
-        graph = self.create_cutted_graph()
-
-        pos = nx.nx_pydot.pydot_layout(graph,prog='dot')
-        nx.draw_networkx(graph,pos,node_color=["y"])
-        plt.show()
-
-
+    #=======================================================
+    #手法で既に取り除かれているノードを除外した従属グラフを返す
+    #=======================================================
     def create_cutted_graph(self):
         graph = self.copied_graph()
         for element in self.removed_nodelist:
-            #print(element)
             graph.remove_node(element)
 
         return graph
 
-    # ノードがなくなったときに実行、リストを連結して返り値として返す
+    #==========================================================
+    #ノードがなくなったときに実行、リストを連結して返り値として返す
+    #==========================================================
     def complete(self):
         #日景法の整列済みリストは逆順になっているのでリバース
         self.hikages_reordered_nodelist.reverse()
@@ -193,13 +105,59 @@ class DependencyGraphModel:
         reordered_nodelist = self.sgms_reordered_nodelist + self.hikages_reordered_nodelist
 
         ret_rulelist = RuleList()
-        #print(reordered_nodelist)
         for i in range(len(reordered_nodelist)):
             ret_rulelist.append(self.rule_list[reordered_nodelist[i]-1])
-        #print(ret_rulelist)
 
         return ret_rulelist
 
+    #=========================================
+    # 部分グラフの重み平均を導出（SGMのサブ関数）
+    #=========================================
+    # souce -> 部分木の根
+    def sum_of_weight_in_subgraph(self,src):
+
+        sum_of_weight = 0
+        keys = []
+        dict = nx.shortest_path(self.graph,source=src)
+
+        for key in dict.keys():
+            sum_of_weight += self.rule_list[key-1]._weight
+            keys.append(key)
+
+        return (sum_of_weight,keys)
+
+    #=======================================================
+    # Gの重み平均一覧から対象のGを選択しreturn（SGMのサブ関数）
+    #=======================================================
+    # debugをTrueにすると、各Gの重み平均と選択したGを出力
+    def decide_choice(self,keys,debug=False):
+        _max = 0
+        return_key = -1
+        is_all_weight_is_zero = True
+        for i in keys:
+            ret = self.sum_of_weight_in_subgraph(i)
+            if debug:
+                print("[%4f] "%(ret),end="")
+
+            ave = ret[0] / len(ret[1])
+            if ave > _max:
+                _max = ave
+                return_key = i
+                is_all_weight_is_zero = False
+
+        #キーの重みがすべて0の場合は先頭の要素を選択
+        if is_all_weight_is_zero:
+            if debug:
+                print("-> [%4f] "%(keys[0]))
+            return keys[0]
+        if debug:
+            print("-> [%4f] "%(return_key))
+        return return_key
+
+
+    #=======================================================
+    #                   SGMを１回だけ実行
+    #=======================================================
     def single__sub_graph_mergine(self):
 
         # グラフをコピー

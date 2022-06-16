@@ -47,3 +47,19 @@ class BS:
             for i in range(max_num):
                 packet_list.append(format(i,specifier))
         return packet_list
+
+    #===========================================
+    #      ファイル名から行動リストを構築する
+    #===========================================
+    @staticmethod
+    def create_actionlist(actionlist_filename):
+        action_list = []
+        with open(actionlist_filename,mode="r") as actionlist_file:
+            while actionlist_file:
+                action = actionlist_file.readline().split()
+                if not action:
+                    break
+                action_list.append((action[0],[int(x) for x in action[1:]]))
+
+
+        return action_list

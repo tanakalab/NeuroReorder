@@ -66,7 +66,11 @@ class DependencyGraphModel:
             Graph.add_edge(edges[i][0],edges[i][1],color=edges[i][2])
 
         self.rule_list = rule_list
+        # 初期グラフ(これをコピーして計算する)
         self.graph = Graph2
+
+        # 計算用グラフ(このグラフ構造のノードを取り除く)
+        self.calculate_graph = self.copied_graph()
 
         # 手法を適用しグラフから除去したノードリスト
         self.removed_nodelist = []
@@ -84,6 +88,7 @@ class DependencyGraphModel:
         nx.draw_networkx(self.graph,pos,edge_color=edge_color,node_color=node_color,node_size=node_size,font_size=1)
         # 出力
         plt.savefig(file_name + ".png")
+
 
     #=======================================================
     #手法で既に取り除かれているノードを除外した従属グラフを返す
@@ -161,11 +166,12 @@ class DependencyGraphModel:
     def single__sub_graph_mergine(self):
 
         # グラフをコピー
-        copied_graph = self.copied_graph()
-        for element in self.removed_nodelist:
-            copied_graph.remove_node(element)
+        #copied_graph = self.copied_graph()
+        #for element in self.removed_nodelist:
+        #    copied_graph.remove_node(element)
+
         #print(copied_graph.edges())
-        _next = list(copied_graph.nodes)
+        _next = list(self.calculate_graph.nodes)
 
         while True:
             choice = self.decide_choice(_next)
@@ -176,6 +182,7 @@ class DependencyGraphModel:
                     #print("\t[r[%d]]"%(choice-1))
                     self.sgms_reordered_nodelist.append(i)
                     self.removed_nodelist.append(i)
+                    self.calculate_graph.remove_node(i)
                     return i
                 #print("BREAK.")
                 break
@@ -185,12 +192,13 @@ class DependencyGraphModel:
             #print(list(nx.shortest_path(copied_graph,target=choice).keys()),end="")
 
 
-            _next = list(copied_graph.succ[choice])
+            _next = list(self.calculate_graph.succ[choice])
             #print(_next,end="")
             if len(_next) <= 0:
                 #print("\t|r[%d]|"%(choice))
                 self.sgms_reordered_nodelist.append(choice)
                 self.removed_nodelist.append(choice)
+                self.calculate_graph.remove_node(choice)
                 #_next = list(self.graph.nodes)
                 return choice
             #print("")

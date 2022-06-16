@@ -246,8 +246,9 @@ class RuleList:
         for i in range(len(packet_list)):
 
             # lapの値で区切って経過出力
-            if i % lap == 0:
-                print("%d / %d is filtered."% (i,len(packet_list)))
+            if is_print_detail:
+                if i % lap == 0:
+                    print("%d / %d is filtered."% (i,len(packet_list)))
 
 
             #遅延

@@ -171,7 +171,7 @@ class rulemodel_env(gym.core.Env):
     #======================================================
     def dump(self,rulelist,reward):
         # ルールリストを出力
-        with open("Dump/"+self.experiment_title+"_Rule_{"+str(self.dump_count)+"}_["+str(reward)+"]","w",encoding="utf-8",newline="\n") as write_file:
+        with open("Dump/"+self.experiment_title+"/Rule_{"+str(self.dump_count)+"}_["+str(reward)+"]","w",encoding="utf-8",newline="\n") as write_file:
 
             for i in range(len(rulelist)):
                 if rulelist[i].evaluate == "Accept":
@@ -179,7 +179,7 @@ class rulemodel_env(gym.core.Env):
                 elif rulelist[i].evaluate == "Deny":
                     write_file.write("Deny\t"+rulelist[i].bit_string+"\n")
         # 行動一覧を出力
-        with open("Dump/"+self.experiment_title+"_Actions_{"+str(self.dump_count)+"}","w",encoding="utf-8",newline="\n") as write_file:
+        with open("Dump/"+self.experiment_title+"/Actions_{"+str(self.dump_count)+"}","w",encoding="utf-8",newline="\n") as write_file:
             for action in self.action_group:
                 write_file.write(str(action[0]) + "\t" + " ".join(map(str,action[1])) + "\n")
 

@@ -7,6 +7,7 @@
 import math
 import argparse
 import random
+import os
 # グラフライブラリとプロットライブラリ
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -102,6 +103,11 @@ if __name__ == "__main__":
     # モデル出力
     model.summary()
 
+
+    # 実験ファイル保存用ディレクトリの作成・整理
+    os.makedirs("Dump/"+args.experiment_title,exist_ok=True)
+
+
     # ------------------------- ここからKeras-RLの処理 ------------------------
     #経験蓄積メモリの定義
     memory = SequentialMemory(limit=500000, window_length=1,ignore_episode_boundaries=True)
@@ -127,16 +133,16 @@ if __name__ == "__main__":
     history = dqn.fit(env,nb_steps=max_all_steps,visualize=False, verbose=1,log_interval=max_all_steps/10,nb_max_episode_steps=max_all_steps)
 
     #学習した重みを保存
-    dqn.save_weights('result.hdf5',overwrite=True)
+    dqn.save_weights('nnw.hdf5',overwrite=True)
 
     #グラフ化
     plt.plot(history.history['nb_episode_steps'], label='nb_episode_steps',linewidth=1)
     plt.legend()
-    plt.savefig("Dump/"+args.experiment_title+"_nb_episode_steps.png")
+    plt.savefig("Dump/"+args.experiment_title+"/nb_episode_steps.png")
     plt.clf()
     plt.plot(history.history['episode_reward'], label='episode_reward',linewidth=1)
     plt.legend()
-    plt.savefig("Dump/"+args.experiment_title+"_episode_reward.png")
+    plt.savefig("Dump/"+args.experiment_title+"/episode_reward.png")
 
     # ------------------------- ここまでKeras-RLの処理 ------------------------
 

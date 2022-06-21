@@ -35,6 +35,11 @@ parser.add_argument(
     type=int,
     default=100,
     help="")
+parser.add_argument(
+    "--dump_type",
+    type=str,
+    default="normal",
+    help="normal -> 通常の出力．caption -> ゼミ資料などで小規模ルールの従属グラフを載せたい場合に向けた設定で出力")
 
 # ------------------------------------------------------------------
 # -----                       main処理                         -----
@@ -51,4 +56,4 @@ if __name__ == "__main__":
 
     plt.figure(figsize=(args.figsize,args.figsize))
 
-    graph.plot_graph(file_name="Dump/" + args.rules.split('/')[-1])
+    graph.plot_graph(file_name="Dump/" + args.rules.split('/')[-1],dump_type=args.dump_type)

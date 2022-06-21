@@ -78,16 +78,40 @@ class DependencyGraphModel:
     #=======================================================
     #                      グラフを出力
     #=======================================================
-    def plot_graph(self,file_name="figDump"):
+    # dump_type = normal  ->  通常の出力
+    # dump_type = caption ->  資料に載せるグラフに適した形式で出力
+    def plot_graph(self,file_name="figDump",dump_type="normal"):
         # 色とノードサイズをグラフデータとして構築
         node_color = [node["color"] for node in self.graph.nodes.values()]
         edge_color = [edge["color"] for edge in self.graph.edges.values()]
         node_size = [node["size"]*10 for node in self.graph.nodes.values()]
+
         # グラフを描く
         pos = nx.nx_pydot.pydot_layout(self.graph,prog='dot')
-        nx.draw_networkx(self.graph,pos,edge_color=edge_color,node_color=node_color,node_size=node_size,font_size=1)
+        # 出力設定に応じた処理
+        if dump_type == "caption":
+            extension = ".eps"
+            nx.draw_networkx(self.graph,pos,node_color="white",node_size=1000,linewidths=1.0,edgecolors="black")
+            # 枠線の除去
+            plt.gca().spines['right'].set_visible(False)
+            plt.gca().spines['left'].set_visible(False)
+            plt.gca().spines['top'].set_visible(False)
+            plt.gca().spines['bottom'].set_visible(False)
+        else:
+            extension = ".png"
+            nx.draw_networkx(self.graph,pos,edge_color=edge_color,node_color=node_color,node_size=node_size,font_size=1)
+
         # 出力
-        plt.savefig(file_name + ".png")
+        plt.savefig(file_name + extension)
+
+    def show(self):
+        graph = self.create_cutted_graph()
+
+        # グラフを描く
+        pos = nx.nx_pydot.pydot_layout(graph,prog='dot')
+        nx.draw_networkx(graph,pos)
+        # 出力
+        plt.show()
 
 
     #=======================================================
@@ -247,7 +271,9 @@ class DependencyGraphModel:
         return subgraph_nodesets
 
 
-    # 日景法により並べ替える
+    #=======================================================
+    #                  日景法を１回だけ実行
+    #=======================================================
     def single__hikage_method(self):
 
 
@@ -263,8 +289,8 @@ class DependencyGraphModel:
         for subgraph_nodeset in subgraph_nodesets_w:
             for i in range(len(subgraph_nodeset)):
                 subgraph_nodeset[i] = self.rule_list[subgraph_nodeset[i]-1]._weight
-        #print(subgraph_nodesets)
-        #print(subgraph_nodesets_w)
+        print(subgraph_nodesets)
+        print(subgraph_nodesets_w)
 
         ### 連結成分内の順序を表すリストN(に重みを付加したタプル)の生成
 
@@ -305,8 +331,8 @@ class DependencyGraphModel:
                 if len(N) == 0:
                     Ns.remove(N)
 
-        #print("Ns = ",end="")
-        #print(Ns)
+        print("Ns = ",end="")
+        print(Ns)
 
         # すべてのNが空になる(空になったNをNsから削除することでNの要素数で判定できる)まで
         while(len(Ns) > 0):
@@ -321,8 +347,8 @@ class DependencyGraphModel:
                 w.reverse()
                 Ws.append(w)
 
-            #print("Ws = ",end="")
-            #print(Ws)
+            print("Ws = ",end="")
+            print(Ws)
 
             ### 整列済みリストへ挿入するリストの先端位置の決定
 
@@ -344,15 +370,12 @@ class DependencyGraphModel:
             addlist.reverse()
             sorted_list += addlist
 
-            #print(addlist)
+            print(addlist)
 
             for element in addlist:
                 #self.hikages_reordered_rulelist.append(self.rule_list[element[0]-1])
                 self.hikages_reordered_nodelist.append(element[0])
                 self.removed_nodelist.append(element[0])
-
-
-
 
             return [element[0] for element in addlist]
             #Ns[index_Ns] = Ns[index_Ns][:index_N]

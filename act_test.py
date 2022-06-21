@@ -81,7 +81,6 @@ if __name__ == "__main__":
     if args.actions != None:
         action_list = BS.create_actionlist(args.actions)
 
-    #print(action_list)
 
     # グラフ構築のテスト
 
@@ -102,15 +101,14 @@ if __name__ == "__main__":
         while len(graph.removed_nodelist) < len(list(graph.graph.nodes)):
             chosen_algorithm = input("使用アルゴリズム(SGMの\"s\"または日景の\"h\"):")
             if chosen_algorithm == "s":
-                graph.single__sub_graph_mergine()
+                print(graph.single__sub_graph_mergine())
             elif chosen_algorithm == "h":
-                graph.single__hikage_method()
+                print(graph.single__hikage_method())
+            #graph.show()
+        exit()
 
     else:
         print("START MP4 CREATE")
 
         ani = animation.FuncAnimation(fig,update,init_func=init_func,fargs = ("GRAPH",action_list,pos,graph),interval=300,frames=len(action_list))
         ani.save("Dump/Process.mp4",writer='ffmpeg')
-
-    #final_nodelist = graph.complete()
-    #print(final_nodelist)

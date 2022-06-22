@@ -105,6 +105,11 @@ if __name__ == "__main__":
             elif chosen_algorithm == "h":
                 print(graph.single__hikage_method())
             #graph.show()
+            print("Ns = ",end="")
+            print(graph.Ns)
+            print("\t",end="")
+            print(graph.nodepositions_inNs.items())
+        graph.complete()
         exit()
 
     else:

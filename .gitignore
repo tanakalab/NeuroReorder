@@ -1,6 +1,8 @@
 Dump/*
 Datas/*
-result.hdf5
+nnw.hdf5
+notify_token
+ClassBench/*
 
 
 # Byte-compiled / optimized / DLL files

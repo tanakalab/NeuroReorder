@@ -106,6 +106,8 @@ class rulemodel_env(gym.core.Env):
             chosed_nodes = self.calc_graph.single__hikage_method()
             self.action_group.append(("Hikage",chosed_nodes))
 
+        #print(chosed_nodes)
+
         # グラフからノードがなくなったら終了判定
         if len(self.calc_graph.removed_nodelist) >= len(list(self.calc_graph.graph.nodes)):
             done = True
@@ -116,12 +118,14 @@ class rulemodel_env(gym.core.Env):
             reordered_rulelist = self.calc_graph.complete()
 
             # 報酬計算
+            #reward = (-1) * self.compute_reward(reordered_rulelist)
             reward = (-1) * reordered_rulelist.filter(self.packetlist)[0]
 
             # 終了時に報酬の最高値を更新した場合、その際のルールリストを出力
             if reward > self.max_reward:
                 self.max_reward = reward
                 print("\n\nNEW_REWARD -->>\t %d"%(self.max_reward))
+                #print("\t\tDELAY -->>\t %d"%(reordered_rulelist.filter(self.packetlist)[0]))
                 self.dump(reordered_rulelist,reward)
 
         return self.transform_rulelist_to_state(),reward,done,{}
@@ -161,9 +165,14 @@ class rulemodel_env(gym.core.Env):
     #====================================
     #=         報酬を計算する関数        =
     #====================================
-    def compute_reward(self):
+    def compute_reward(self,reordered_rulelist):
         # 重みによる報酬計算をする処理 (実装予定)
-        return -1
+
+        weight = 0
+        for i in range(len(reordered_rulelist)):
+            weight += reordered_rulelist[i]._weight * (i+1)
+
+        return weight
 
 
     #======================================================

@@ -55,5 +55,4 @@ if __name__ == "__main__":
     graph = DependencyGraphModel(rule_list,packet_list)
 
     plt.figure(figsize=(args.figsize,args.figsize))
-
     graph.plot_graph(file_name="Dump/" + args.rules.split('/')[-1],dump_type=args.dump_type)

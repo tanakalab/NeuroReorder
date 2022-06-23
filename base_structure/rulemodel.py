@@ -1,30 +1,34 @@
+# ルール・ルールリストを定義するクラス
+
+"""
+  嘘は嘘であると
+  見抜けぬ人でないと
+  (このクラスを使うことは)難しい
+　　　　＿＿_＿
+　　　／へへ　 ＼
+　　／／⌒⌒＼　 ＼
+　 / /　　　　ヽ　 ヽ
+　｜｜ヽ　／⌒ |　　|
+　 ﾚY-･／　-･- ヽ　 |
+　　| /　　　　 Ｖ) |
+　　|(＿つ　 ･　 丿ノ
+　　|＜三三＞)　/ /
+　　ヽ　ﾞﾞ　　／ﾚｿ
+　　　＼从ww／　｜
+　　　　/)￣　　∧
+　　　／ﾚヽ　 ／ |＼
+　　 ｜|　|　｜⌒ |｜
+"""
+
+# ------------------------------------------------------------------
+# -----                      ライブラリ定義                     -----
+# ------------------------------------------------------------------
 import math
 import time
 
-
-#  嘘は嘘であると
-#  見抜けぬ人でないと
-#  (このクラスを使うこと)は難しい HIKAGE版
-#　　　　＿＿_＿
-#　　　／へへ　 ＼
-#　　／／⌒⌒＼　 ＼
-#　 / /　　　　ヽ　 ヽ
-#　｜｜ヽ　／⌒ |　　|
-#　 ﾚY-･／　-･- ヽ　 |
-#　　| /　　　　 Ｖ) |
-#　　|(＿つ　 ･　 丿ノ
-#　　|＜三三＞)　/ /
-#　　ヽ　ﾞﾞ　　／ﾚｿ
-#　　　＼从ww／　｜
-#　　　　/)￣　　∧
-#　　　／ﾚヽ　 ／ |＼
-#　　 ｜|　|　｜⌒ |｜
-
-
-
-#***********************************************
-#*                  ルールクラス                 *
-#***********************************************
+# ------------------------------------------------------------------
+# -----                         ルール                         -----
+# ------------------------------------------------------------------
 class Rule:
 
     #====================================
@@ -35,7 +39,6 @@ class Rule:
     def __init__(self, evaluate, bit_string):
         self.evaluate = evaluate
         self.bit_string = bit_string
-        self.count_mask = 0
         #Gymの環境で使うString型のbit列をint配列へ変換した要素の作成(マスクは2とする)
         self.bit_string_num = []
         for i in range(len(bit_string)):
@@ -45,7 +48,7 @@ class Rule:
                 self.bit_string_num.append(0)
             else:
                 self.bit_string_num.append(1)
-        #重み(フィルタリング時に決定)
+        #重み
         self._weight = 0
 
 
@@ -62,7 +65,6 @@ class Rule:
             if self.bit_string[i] != "*":
                 if self.bit_string[i] != bit_string[i]:
                     return False
-        self._weight += 1
         return True
 
     #====================================
@@ -71,15 +73,11 @@ class Rule:
     # 引数 -> 対象ルール
     # 返り値 -> True or False
     def is_overlap(self,rule):
-        #print("%s | %s" % (self.bit_string,rule.bit_string))
         assert len(self.bit_string) == len(rule.bit_string),"入力されたルールのbit列の長さが異なります."
-        self.count_mask = 0
         for i in range(len(self.bit_string)):
             if self.bit_string[i] != "*" and rule.bit_string[i] != "*":
                 if self.bit_string[i] != rule.bit_string[i]:
                     return False
-            if self.bit_string[i] != "*" and rule.bit_string[i] == "*":
-                self.count_mask += 1
         return True
 
     #====================================
@@ -88,14 +86,12 @@ class Rule:
     # 引数 -> 対象ルール
     # 返り値 -> True or False
     def is_cover(self,rule):
-        #print("%s | %s" % (self.bit_string,rule.bit_string))
         assert len(self.bit_string) == len(rule.bit_string),"入力されたルールのbit列の長さが異なります."
         if self.is_overlap(rule):
             for i in range(len(self.bit_string)):
                 if self.bit_string[i] != rule.bit_string[i]:
                     if rule.bit_string[i] == "*":
                         return False
-
             return True
 
     #====================================
@@ -142,7 +138,6 @@ class Rule:
     #     -> 参照開始する箇所 ref_position
     # 返り値 -> 合致するパケットのリスト
     def match_packet_list(self,bit_string,ref_position):
-        #print(bit_string)
         ret = []
         for i in range(ref_position,len(bit_string)):
             if bit_string[i] == "*":
@@ -164,7 +159,6 @@ class Rule:
     # 返り値 -> 合致するパケットを表すbit列
     def match_packet_bit_string(self,rule):
         ret = ""
-        #print(self.bit_string + "|" + rule.bit_string)
         for i in range(len(self.bit_string)):
             #両方のbitがマスクならそのまま足す
             if self.bit_string[i] == "*" and self.bit_string[i] == rule.bit_string[i]:
@@ -176,7 +170,6 @@ class Rule:
                 ret += self.bit_string[i]
             else: #両方共マスクじゃないなら,bitが異なることはない(異なるものがあると重複関係ではない)のでbitを足す
                 ret += self.bit_string[i]
-            #print(ret)
         return ret
 
     #====================================
@@ -192,11 +185,9 @@ class Rule:
         return self.bit_string[key]
 
 
-
-
-#***********************************************
-#*              ルールリストクラス                *
-#***********************************************
+# ------------------------------------------------------------------
+# -----                      ルールリスト                       -----
+# ------------------------------------------------------------------
 #              (並べ替えを主に扱う)
 class RuleList:
     #====================================
@@ -208,8 +199,10 @@ class RuleList:
         self.rule_list = []
         self.is_print_match_packet=is_print_match_packet
 
+
+
     #====================================
-    #=     ルールを末尾へ追加する関数       =
+    #=        ルールを末尾へ追加         =
     #====================================
     #ルールを追加する関数
     # 引数 -> ルール
@@ -217,31 +210,24 @@ class RuleList:
         self.rule_list.append(rule)
 
     #====================================
-    #=     各ルールの重みを計算する関数      =
+    #=       各ルールの重みを計算        =
     #====================================
-    def compute_weight(self,packet_list,mode="hikage"):
+    def compute_weight(self,packet_list):
 
         for i in self.rule_list:
             i._weight = 0
 
-
-        if mode == "hikage":
-            for i in range(len(packet_list)):
-                for j in range(len(self.rule_list)):
-                    if self.rule_list[j].match(packet_list[i]):
-                        break
-        elif mode == "sgm":
-            for i in range(len(packet_list)):
-                for j in range(len(self.rule_list)):
-                    self.rule_list[j].match(packet_list[i])
-
-
+        for i in range(len(packet_list)):
+            for j in range(len(self.rule_list)):
+                if self.rule_list[j].match(packet_list[i]):
+                    self.rule_list[j]._weight += 1
 
     #====================================
-    #=        パケット分類を行う関数        =
+    #=         パケット分類を行う        =
     #====================================
+    # is_print_detail -> 合致パケットの分布、デフォルトルール合致数、分類進捗を出力する
     # 返り値 -> 遅延の合計値
-    def filter(self,packet_list,is_print_position=False,is_print_detail=False):
+    def filter(self,packet_list,is_print_detail=False):
         #遅延の合計値
         delay_all = 0
         match_number = []
@@ -253,15 +239,16 @@ class RuleList:
 
 
         #print文用の区切り値
-        lap = 10**(len(str(len(packet_list))) - 2)
+        lap = 10**(len(str(len(packet_list))) - 1)
 
 
         #パケットの数だけループ
         for i in range(len(packet_list)):
 
             # lapの値で区切って経過出力
-            #if i % lap == 0:
-            #    print("%d / %d is filtered."% (i,len(packet_list)))
+            if is_print_detail:
+                if i % lap == 0:
+                    print("%d / %d is filtered."% (i,len(packet_list)))
 
 
             #遅延
@@ -271,20 +258,14 @@ class RuleList:
             for j in range(len(self.rule_list)):
                 delay += 1
                 #ルールに合致したら抜ける
-                #print(rule_list[j].bit_string)
-                #print(packet_list[i] + "\n")
                 if self.rule_list[j].match(packet_list[i]):
                     match_position = j
                     break
-                j += 1
+                #j += 1
             if match_position != -1: #どこかに合致した場合
                 match_number[j] += 1
-                if is_print_position:
-                    print("%s\tPacket[%d] is matched Rule[%d]. Delay = [%d]" % (self[match_position].evaluate,i,match_position,delay))
                 match_list.append(self[match_position].evaluate)
             else: #どこにも合致しなかった場合
-                if is_print_position:
-                    print("%s\tPacket[%d] is matched Default rule. Delay = [%d]" % (self[match_position].evaluate,i,delay))
                 match_list.append("Deny")
                 match_default_rule_num += 1
             delay_all += delay
@@ -493,31 +474,22 @@ class RuleList:
                 print("[%d] D %s" % (i+1,self.rule_list[i].bit_string))
 
         print("[ ] Default Rule [ ]\n")
-        overlap_score = 0
-        super_score = 0
         for i in reversed(range(len(self.rule_list))):
             if self.is_print_match_packet:
                 print("ルール[%d]に合致するパケット ->" % i , self.rule_list[i].match_packet_list(self.rule_list[i].bit_string,0))
             for j in reversed(range(0,i)):
 
                 if self.rule_list[j].is_overlap(self.rule_list[i]):
-                    count_mask = self.rule_list[j].count_mask
-                    super_score += count_mask
-                    overlap_score += 1
                     #print(self.rule_list[i].match_packet_bit_string(self.rule_list[j]))
                     if self.rule_list[j].is_dependent(self.rule_list[i]):
                         if self.rule_list[j].is_cover(self.rule_list[i]):
-                            print("ルール[%d]とルール[%d]は従属かつ被覆関係\t%d" % (i , j,count_mask))
+                            print("ルール[%d]とルール[%d]は従属かつ被覆関係" % (i , j))
                         else:
-                            print("ルール[%d]とルール[%d]は従属関係\t%d" % (i+1 , j+1,count_mask))
+                            print("ルール[%d]とルール[%d]は従属関係" % (i+1 , j+1))
                     elif self.rule_list[j].is_cover(self.rule_list[i]):
                         print("ルール[%d]とルール[%d]は被覆関係" % (i+1 , j+1))
                     else:
-                        print("ルール[%d]とルール[%d]は重複関係\t%d" % (i+1 , j+1,count_mask))
-        if overlap_score != 0:
-            print("OVERLAP_SCORE = %d" % overlap_score)
-            print("SUPER_SCORE = %d" % super_score)
-            print("MEAN = %s" % (super_score / overlap_score))
+                        print("ルール[%d]とルール[%d]は重複関係" % (i+1 , j+1))
         return ""
 
     #====================================

@@ -133,7 +133,7 @@ if __name__ == "__main__":
     history = dqn.fit(env,nb_steps=max_all_steps,visualize=False, verbose=1,log_interval=max_all_steps/10,nb_max_episode_steps=max_all_steps)
 
     #学習した重みを保存
-    dqn.save_weights('nnw.hdf5',overwrite=True)
+    dqn.save_weights("Dump/"+args.experiment_title+"/nnw.hdf5",overwrite=True)
 
     #グラフ化
     plt.plot(history.history['nb_episode_steps'], label='nb_episode_steps',linewidth=1)

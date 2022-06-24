@@ -82,7 +82,7 @@ class DependencyGraphModel:
     #=======================================================
     # dump_type = normal  ->  通常の出力
     # dump_type = caption ->  資料に載せるグラフに適した形式で出力
-    def plot_graph(self,file_name="figDump",dump_type="normal"):
+    def plot_graph(self,file_name="figDump.png",dump_type="normal"):
         # 色とノードサイズをグラフデータとして構築
         node_color = [node["color"] for node in self.graph.nodes.values()]
         edge_color = [edge["color"] for edge in self.graph.edges.values()]
@@ -92,7 +92,6 @@ class DependencyGraphModel:
         pos = nx.nx_pydot.pydot_layout(self.graph,prog='dot')
         # 出力設定に応じた処理
         if dump_type == "caption":
-            extension = ".eps"
             nx.draw_networkx(self.graph,pos,node_color="white",node_size=1000,linewidths=1.0,edgecolors="black")
             # 枠線の除去
             plt.gca().spines['right'].set_visible(False)
@@ -100,11 +99,10 @@ class DependencyGraphModel:
             plt.gca().spines['top'].set_visible(False)
             plt.gca().spines['bottom'].set_visible(False)
         else:
-            extension = ".png"
             nx.draw_networkx(self.graph,pos,edge_color=edge_color,node_color=node_color,node_size=node_size,font_size=1)
 
         # 出力
-        plt.savefig(file_name + extension)
+        plt.savefig(file_name)
 
     def show(self):
         graph = self.create_cutted_graph()

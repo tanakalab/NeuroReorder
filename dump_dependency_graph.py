@@ -40,6 +40,13 @@ parser.add_argument(
     type=str,
     default="normal",
     help="normal -> 通常の出力．caption -> ゼミ資料などで小規模ルールの従属グラフを載せたい場合に向けた設定で出力")
+parser.add_argument(
+    "--extension",
+    type=str,
+    default="png",
+    help="画像ファイルの拡張子，pngまたはeps．")
+
+
 
 # ------------------------------------------------------------------
 # -----                       main処理                         -----
@@ -55,4 +62,4 @@ if __name__ == "__main__":
     graph = DependencyGraphModel(rule_list,packet_list)
 
     plt.figure(figsize=(args.figsize,args.figsize))
-    graph.plot_graph(file_name="Dump/" + args.rules.split('/')[-1],dump_type=args.dump_type)
+    graph.plot_graph(file_name="Dump/" + args.rules.split('/')[-1] + "." + args.extension,dump_type=args.dump_type)

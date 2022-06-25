@@ -70,6 +70,42 @@ if __name__ == "__main__":
     # 学習ステップ数
     max_all_steps = args.max_steps
 
+
+    rule_list.compute_weight(packet_list)
+    graph = DependencyGraphModel(rule_list)
+
+    copied_graph = graph.copied_graph()
+
+    subgraph_nodesets = graph.subgraph_nodesets(copied_graph)
+    subgraph_nodesets_w = graph.subgraph_nodesets(copied_graph)
+    Ns2 = graph.new_alignment_subgraph_nodesets(subgraph_nodesets,subgraph_nodesets_w,copied_graph)
+
+    copied_graph = graph.copied_graph()
+
+    subgraph_nodesets = graph.subgraph_nodesets(copied_graph)
+    subgraph_nodesets_w = graph.subgraph_nodesets(copied_graph)
+
+    Ns1 = graph.alignment_subgraph_nodesets(subgraph_nodesets,subgraph_nodesets_w,copied_graph)
+
+    for i in range(len(Ns1)):
+        if len(Ns1[i]) != len(Ns2[i]):
+            print("長さ違反")
+            exit()
+        else:
+            for j in range(len(Ns1[i])):
+                if Ns1[i][j][0] != Ns2[i][j][0]:
+                    print("ノード位置違反")
+                    exit()
+                if Ns1[i][j][1] != Ns2[i][j][1]:
+                    print("重み違反")
+                    exit()
+
+
+    print("正常")
+
+
+    exit()
+
     # gymに環境を登録し、初期化変数を設定
     register(
         id='rulelistRecontrust-v0',

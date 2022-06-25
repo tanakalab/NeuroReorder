@@ -154,7 +154,7 @@ class DependencyGraphModel:
 
         sum_of_weight = 0
         keys = []
-        dict = nx.shortest_path(self.graph,source=src)
+        dict = nx.shortest_path(self.calculate_graph,source=src)
 
         for key in dict.keys():
             sum_of_weight += self.rule_list[key-1]._weight
@@ -208,34 +208,14 @@ class DependencyGraphModel:
 
         while True:
             choice = self.decide_choice(_next)
-
-            #print(_next,end="")
-            if choice == -1:
-                for i in _next:
-                    #print("\t[r[%d]]"%(choice-1))
-                    self.sgms_reordered_nodelist.append(i)
-                    self.removed_nodelist.append(i)
-                    self.calculate_graph.remove_node(i)
-                    self.delete_from_Ns(i)
-
-                    return i
-                #print("BREAK.")
-                break
-
-            #print(" -> ",end="")
-            #print("{choice={%d}} -> "%(choice),end="")
-            #print(list(nx.shortest_path(copied_graph,target=choice).keys()),end="")
-
-
             _next = list(self.calculate_graph.succ[choice])
-            #print(_next,end="")
             if len(_next) <= 0:
                 #print("\t|r[%d]|"%(choice))
                 self.sgms_reordered_nodelist.append(choice)
                 self.removed_nodelist.append(choice)
                 self.calculate_graph.remove_node(choice)
                 self.delete_from_Ns(choice)
-
+                #print(choice)
                 #_next = list(self.graph.nodes)
                 return choice
             #print("")
@@ -296,16 +276,19 @@ class DependencyGraphModel:
     #=======================================================
     # 各連結成分のノードを整列し二次元配列Nsとして返す
     #=======================================================
-    """
+
     def alignment_subgraph_nodesets(self,subgraph_nodesets,subgraph_nodesets_w,copied_graph):
         # 連結成分内の順序を表すリストN(に重みを付加したタプル)の生成
         Ns = []
         for subgraph_nodeset,subgraph_nodeset_w in zip(subgraph_nodesets,subgraph_nodesets_w):
             #cachelist = subgraph_nodeset #頂点集合
             N = []
+            counter = 0
             while len(subgraph_nodeset) > 0:
+                counter += 1
                 # 現時点で入次数が0なノード番号を抽出
                 matchedlist = [i for i in subgraph_nodeset if len(list(copied_graph.pred[i])) == 0]
+                #print("MATCHED_LIST",end="")
                 #print(matchedlist)
                 # 抽出したノード番号に対応する重みリスト
                 matchedlist_w = [subgraph_nodeset_w[i] for i in range(len(subgraph_nodeset)) if subgraph_nodeset[i] in matchedlist]
@@ -315,42 +298,84 @@ class DependencyGraphModel:
                     # 重みの最小値の位置を導出
                     minimum_index = matchedlist_w.index(min(matchedlist_w))
                     # 構築済みNに(ノード番号,重み)のタプルとして格納し、元の頂点集合から削除
-                    N.append((matchedlist[minimum_index],matchedlist_w[minimum_index]))
+                    N.append((matchedlist[minimum_index],matchedlist_w[minimum_index],counter))
                     subgraph_nodeset.remove(matchedlist[minimum_index])
                     # グラフからも削除
                     copied_graph.remove_node(matchedlist[minimum_index])
                     # 抽出リストから削除
                     del matchedlist[minimum_index]
                     del matchedlist_w[minimum_index]
-
             N.reverse()
-            Ns.append(N)
-        return Ns
-    """
 
-    def alignment_subgraph_nodesets(self,subgraph_nodesets,subgraph_nodesets_w,copied_graph):
+            Ns.append(N)
+
+        #print(Ns)
+        return Ns
+
+
+    def subfunc(self,list1,list2):
+        for i in range(len(list1)):
+            if list1[i] in list2:
+                continue
+            else:
+                return False
+
+        return True
+
+    def new_alignment_subgraph_nodesets(self,subgraph_nodesets,subgraph_nodesets_w,copied_graph):
     # 連結成分内の順序を表すリストN(に重みを付加したタプル)の生成
         Ns = []
         for subgraph_nodeset,subgraph_nodeset_w in zip(subgraph_nodesets,subgraph_nodesets_w):
+            N = []
+            chosen_nodes = []
+            # 現時点で入次数が0なノード番号を抽出
+            matchedlist = [i for i in subgraph_nodeset  if len(list(copied_graph.pred[i])) == 0]
+            chosen_nodes += matchedlist
+            matchedlist = [(i,self.rule_list[i-1]._weight) for i in matchedlist]
+            matchedlist.sort(key=lambda x:x[1])
+            N += matchedlist
+            for node in matchedlist:
+                subgraph_nodeset.remove(node[0])
+            while len(subgraph_nodeset) > 0:
+                matchedlist = [i for i in subgraph_nodeset  if self.subfunc(list(copied_graph.pred[i]),chosen_nodes)]
+                chosen_nodes += matchedlist
+                matchedlist = [(i,self.rule_list[i-1]._weight) for i in matchedlist]
+                matchedlist.sort(key=lambda x:x[1])
+                N += matchedlist
+                for node in matchedlist:
+                    subgraph_nodeset.remove(node[0])
 
+            Ns.append(N)
+        #print(Ns)
+        #print(sum([len(x) for x in Ns]))
+        #exit()
+        return Ns
+
+    """
+    def new_alignment_subgraph_nodesets(self,subgraph_nodesets,subgraph_nodesets_w,copied_graph):
+    # 連結成分内の順序を表すリストN(に重みを付加したタプル)の生成
+        Ns = []
+        for subgraph_nodeset,subgraph_nodeset_w in zip(subgraph_nodesets,subgraph_nodesets_w):
+            counter = 1
             N = []
             # 現時点で入次数が0なノード番号を抽出
             matchedlist = [i for i in subgraph_nodeset if len(list(copied_graph.pred[i])) == 0]
             # 抽出したノード番号に対応する重みリスト
             matchedlist_w = [subgraph_nodeset_w[i] for i in range(len(subgraph_nodeset)) if subgraph_nodeset[i] in matchedlist]
-            #print(matchedlist)
-            #print(matchedlist_w)
-            next_list = [(i,self.rule_list[i-1]._weight) for i in matchedlist]
+            print(matchedlist)
+            print(matchedlist_w)
+            next_list = [(i,self.rule_list[i-1]._weight,counter) for i in matchedlist]
             depth = 0
             matchedlist = [next_list]
             appended_nodelist = [x for x in next_list]
             while(len(next_list) > 0):
+                counter += 1
                 depth += 1
                 cache_list = []
                 #print("next",end="")
                 #print(next_list)
                 for node in next_list:
-                    arr = [(i,self.rule_list[i-1]._weight) for i in list(copied_graph.succ[node[0]]) if not i in appended_nodelist]
+                    arr = [(i,self.rule_list[i-1]._weight,counter) for i in list(copied_graph.succ[node[0]]) if not i in appended_nodelist]
                     cache_list += arr
                     for x in arr:
                         appended_nodelist.append(x[0])
@@ -373,7 +398,7 @@ class DependencyGraphModel:
             Ns.append(N)
 
         return Ns
-
+    """
     #=======================================================
     # 日景法の準備（従属グラフを連結成分へ分解し整列したクラス変数を用意）
     # インスタンスを生成した際に１回だけ実行する
@@ -387,6 +412,7 @@ class DependencyGraphModel:
         for subgraph_nodeset in subgraph_nodesets_w:
             for i in range(len(subgraph_nodeset)):
                 subgraph_nodeset[i] = self.rule_list[subgraph_nodeset[i]-1]._weight
+        #print("SUBGRAPH NODESETS")
         #print(subgraph_nodesets)
         #print(subgraph_nodesets_w)
 
@@ -434,8 +460,8 @@ class DependencyGraphModel:
             for i in range(len(subgraph_nodeset)):
                 subgraph_nodeset[i] = self.rule_list[subgraph_nodeset[i]-1]._weight
 
-
-        Ns = self.alignment_subgraph_nodesets(subgraph_nodesets,subgraph_nodesets_w,self.calculate_graph)
+        Ns = self.Ns
+        #Ns = self.alignment_subgraph_nodesets(subgraph_nodesets,subgraph_nodesets_w,self.calculate_graph)
 
         ### Wを計算する
         Ws = []

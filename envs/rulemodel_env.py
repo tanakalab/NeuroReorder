@@ -41,7 +41,7 @@ class rulemodel_env(gym.core.Env):
         # パラメータを設定
         self.rulelist = rulelist
         self.packetlist = packetlist
-        self.init_graph = DependencyGraphModel(rulelist)
+        self.init_graph = DependencyGraphModel(rulelist,packetlist)
         self.calc_graph = None
         self.experiment_title = experiment_title
 
@@ -83,7 +83,7 @@ class rulemodel_env(gym.core.Env):
 
         self.action_group = []
         # 従属グラフを初期化
-        self.calc_graph =  DependencyGraphModel(self.rulelist)
+        self.calc_graph =  DependencyGraphModel(self.rulelist,self.packetlist)
 
         return self.transform_rulelist_to_state()
 
@@ -96,6 +96,10 @@ class rulemodel_env(gym.core.Env):
         done = False
         reward = 0
 
+
+        chosed_nodes = self.calc_graph.single__hikage_method()
+        self.action_group.append(("Hikage",chosed_nodes))
+        """
         # アクションの値によって使用する発見的解法を変更
         # 0 -> Sub Graph Merging
         if action == 0:
@@ -105,11 +109,11 @@ class rulemodel_env(gym.core.Env):
         elif action == 1:
             chosed_nodes = self.calc_graph.single__hikage_method()
             self.action_group.append(("Hikage",chosed_nodes))
-
+        """
         #print(chosed_nodes)
 
         # グラフからノードがなくなったら終了判定
-        if len(self.calc_graph.removed_nodelist) >= len(list(self.calc_graph.graph.nodes)):
+        if len(list(self.calc_graph.calculate_graph.nodes)) <= 0:
             done = True
 
         # 終了時処理

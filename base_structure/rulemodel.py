@@ -222,6 +222,7 @@ class RuleList:
                 if self.rule_list[j].match(packet_list[i]):
                     self.rule_list[j]._weight += 1
 
+
     #====================================
     #=         パケット分類を行う        =
     #====================================

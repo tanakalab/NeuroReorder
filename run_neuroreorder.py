@@ -70,7 +70,7 @@ if __name__ == "__main__":
     # 学習ステップ数
     max_all_steps = args.max_steps
 
-
+    """
     rule_list.compute_weight(packet_list)
     graph = DependencyGraphModel(rule_list)
 
@@ -105,7 +105,7 @@ if __name__ == "__main__":
 
 
     exit()
-
+    """
     # gymに環境を登録し、初期化変数を設定
     register(
         id='rulelistRecontrust-v0',

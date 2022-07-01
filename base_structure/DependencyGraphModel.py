@@ -16,13 +16,14 @@ class DependencyGraphModel:
     #=========================================
     #                 初期化
     #=========================================
-    def __init__(self,rulelist,packetlist=None):
+    def __init__(self,rulelist,packetlist=None,compute_weight=True):
 
         rule_list = rulelist
         packet_list = packetlist
 
-        if not packetlist is None:
-            rulelist.compute_weight(packetlist)
+        if compute_weight:
+            if not packetlist is None:
+                rulelist.compute_weight(packetlist)
 
         # 各手法の整列済みリスト（ルール番号のリスト）
         self.sgms_reordered_nodelist = []
@@ -276,7 +277,7 @@ class DependencyGraphModel:
     #=======================================================
     # 各連結成分のノードを整列し二次元配列Nsとして返す
     #=======================================================
-
+    """
     def alignment_subgraph_nodesets(self,subgraph_nodesets,subgraph_nodesets_w,copied_graph):
         # 連結成分内の順序を表すリストN(に重みを付加したタプル)の生成
         Ns = []
@@ -311,8 +312,8 @@ class DependencyGraphModel:
 
         #print(Ns)
         return Ns
-
-
+    """
+    """
     def subfunc(self,list1,list2):
         for i in range(len(list1)):
             if list1[i] in list2:
@@ -350,9 +351,9 @@ class DependencyGraphModel:
         #print(sum([len(x) for x in Ns]))
         #exit()
         return Ns
-
     """
-    def new_alignment_subgraph_nodesets(self,subgraph_nodesets,subgraph_nodesets_w,copied_graph):
+
+    def alignment_subgraph_nodesets(self,subgraph_nodesets,subgraph_nodesets_w,copied_graph):
     # 連結成分内の順序を表すリストN(に重みを付加したタプル)の生成
         Ns = []
         for subgraph_nodeset,subgraph_nodeset_w in zip(subgraph_nodesets,subgraph_nodesets_w):
@@ -362,8 +363,8 @@ class DependencyGraphModel:
             matchedlist = [i for i in subgraph_nodeset if len(list(copied_graph.pred[i])) == 0]
             # 抽出したノード番号に対応する重みリスト
             matchedlist_w = [subgraph_nodeset_w[i] for i in range(len(subgraph_nodeset)) if subgraph_nodeset[i] in matchedlist]
-            print(matchedlist)
-            print(matchedlist_w)
+            #print(matchedlist)
+            #print(matchedlist_w)
             next_list = [(i,self.rule_list[i-1]._weight,counter) for i in matchedlist]
             depth = 0
             matchedlist = [next_list]
@@ -398,7 +399,7 @@ class DependencyGraphModel:
             Ns.append(N)
 
         return Ns
-    """
+
     #=======================================================
     # 日景法の準備（従属グラフを連結成分へ分解し整列したクラス変数を用意）
     # インスタンスを生成した際に１回だけ実行する

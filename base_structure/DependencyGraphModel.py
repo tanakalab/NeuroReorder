@@ -284,121 +284,92 @@ class DependencyGraphModel:
         for subgraph_nodeset,subgraph_nodeset_w in zip(subgraph_nodesets,subgraph_nodesets_w):
             #cachelist = subgraph_nodeset #頂点集合
             N = []
-            counter = 0
+            #print("<",end="")
             while len(subgraph_nodeset) > 0:
-                counter += 1
                 # 現時点で入次数が0なノード番号を抽出
-                matchedlist = [i for i in subgraph_nodeset if len(list(copied_graph.pred[i])) == 0]
-                #print("MATCHED_LIST",end="")
-                #print(matchedlist)
+                matchedlist = [(i,self.rule_list[i-1]._weight) for i in subgraph_nodeset if len(list(self.graph.pred[i])) == 0]
                 # 抽出したノード番号に対応する重みリスト
-                matchedlist_w = [subgraph_nodeset_w[i] for i in range(len(subgraph_nodeset)) if subgraph_nodeset[i] in matchedlist]
+                #matchedlist_w = [subgraph_nodeset_w[i] for i in range(len(subgraph_nodeset)) if subgraph_nodeset[i] in matchedlist]
                 #print(matchedlist_w)
 
-                while(len(matchedlist) > 0):
-                    # 重みの最小値の位置を導出
-                    minimum_index = matchedlist_w.index(min(matchedlist_w))
-                    # 構築済みNに(ノード番号,重み)のタプルとして格納し、元の頂点集合から削除
-                    N.append((matchedlist[minimum_index],matchedlist_w[minimum_index],counter))
-                    subgraph_nodeset.remove(matchedlist[minimum_index])
-                    # グラフからも削除
-                    copied_graph.remove_node(matchedlist[minimum_index])
-                    # 抽出リストから削除
-                    del matchedlist[minimum_index]
-                    del matchedlist_w[minimum_index]
-            N.reverse()
-
-            Ns.append(N)
-
-        #print(Ns)
-        return Ns
-    """
-    """
-    def subfunc(self,list1,list2):
-        for i in range(len(list1)):
-            if list1[i] in list2:
-                continue
-            else:
-                return False
-
-        return True
-
-    def new_alignment_subgraph_nodesets(self,subgraph_nodesets,subgraph_nodesets_w,copied_graph):
-    # 連結成分内の順序を表すリストN(に重みを付加したタプル)の生成
-        Ns = []
-        for subgraph_nodeset,subgraph_nodeset_w in zip(subgraph_nodesets,subgraph_nodesets_w):
-            N = []
-            chosen_nodes = []
-            # 現時点で入次数が0なノード番号を抽出
-            matchedlist = [i for i in subgraph_nodeset  if len(list(copied_graph.pred[i])) == 0]
-            chosen_nodes += matchedlist
-            matchedlist = [(i,self.rule_list[i-1]._weight) for i in matchedlist]
-            matchedlist.sort(key=lambda x:x[1])
-            N += matchedlist
-            for node in matchedlist:
-                subgraph_nodeset.remove(node[0])
-            while len(subgraph_nodeset) > 0:
-                matchedlist = [i for i in subgraph_nodeset  if self.subfunc(list(copied_graph.pred[i]),chosen_nodes)]
-                chosen_nodes += matchedlist
-                matchedlist = [(i,self.rule_list[i-1]._weight) for i in matchedlist]
                 matchedlist.sort(key=lambda x:x[1])
-                N += matchedlist
-                for node in matchedlist:
-                    subgraph_nodeset.remove(node[0])
+                matchedlist.reverse()
+                for element in matchedlist:
+                    N.append(element)
+                    self.graph.remove_node(element[0])
+                    subgraph_nodeset.remove(element[0])
 
             Ns.append(N)
-        #print(Ns)
-        #print(sum([len(x) for x in Ns]))
-        #exit()
+            #print(">",end="")
+        print(Ns)
+        #print("")
         return Ns
     """
-
     def alignment_subgraph_nodesets(self,subgraph_nodesets,subgraph_nodesets_w,copied_graph):
-    # 連結成分内の順序を表すリストN(に重みを付加したタプル)の生成
         Ns = []
+
         for subgraph_nodeset,subgraph_nodeset_w in zip(subgraph_nodesets,subgraph_nodesets_w):
-            counter = 1
             N = []
-            # 現時点で入次数が0なノード番号を抽出
+            appended_list = []
+            # 入次数0のノードを計算
+            #print("<",end="")
             matchedlist = [i for i in subgraph_nodeset if len(list(copied_graph.pred[i])) == 0]
-            # 抽出したノード番号に対応する重みリスト
-            matchedlist_w = [subgraph_nodeset_w[i] for i in range(len(subgraph_nodeset)) if subgraph_nodeset[i] in matchedlist]
-            #print(matchedlist)
-            #print(matchedlist_w)
-            next_list = [(i,self.rule_list[i-1]._weight,counter) for i in matchedlist]
-            depth = 0
-            matchedlist = [next_list]
-            appended_nodelist = [x for x in next_list]
-            while(len(next_list) > 0):
-                counter += 1
-                depth += 1
-                cache_list = []
-                #print("next",end="")
-                #print(next_list)
-                for node in next_list:
-                    arr = [(i,self.rule_list[i-1]._weight,counter) for i in list(copied_graph.succ[node[0]]) if not i in appended_nodelist]
-                    cache_list += arr
-                    for x in arr:
-                        appended_nodelist.append(x[0])
+            N.append(matchedlist)
+            #print(matchedlist,end="")
+            #print(">",end="")
 
-                if len(cache_list) <= 0:
-                    break
-
-                cache_list = list(set(cache_list))
-                matchedlist.append(cache_list)
-                next_list = cache_list
-            #print("matched_list",end="")
-            #print(matchedlist)
+            #for x in matchedlist:
+            #    print("(%d %d)"%(x,self.rule_list[x-1]._weight),end="")
+            appended_list += matchedlist
             for element in matchedlist:
-                element.sort(key=lambda x: x[1])
-                #print(element)
-                for node in element:
-                    N.append(node)
+                subgraph_nodeset.remove(element)
+            """
+            print("")
+            print("AdL -> ",end="")
+            print(appended_list)
+            print("SgNs-> ",end="")
+            print(subgraph_nodeset)
+            """
+            # 入次数1以上のノードを計算
+            while(len([x for x in subgraph_nodeset if not x in appended_list]) > 0):
+                #print("<",end="")
+                matchedlist = [x for x in subgraph_nodeset if len([i for i in list(copied_graph.pred[x]) if not i in appended_list]) == 0 and not x in appended_list]
+                N.append(matchedlist)
+                #print(matchedlist,end="")
+                #print(">",end="")
+                #for x in matchedlist:
+                #    print("(%d %d)"%(x,self.rule_list[x-1]._weight),end="")
 
+                appended_list += matchedlist
+
+                """
+                print("")
+                print("AdL -> ",end="")
+                print(appended_list)
+                print("SgNs-> ",end="")
+                print(subgraph_nodeset)
+                """
+
+
+            # 重みを付加したタプルにし、並べ替え
+
+            for i in range(len(N)):
+                for j in range(len(N[i])):
+                    #print(" %d "%self.rule_list[N[i][j]-1]._weight,end="")
+                    N[i][j] = (N[i][j],self.rule_list[N[i][j]-1]._weight)
+                N[i].sort(key=lambda x:x[1])
+                N[i].reverse()
+            # ネストを展開
             N.reverse()
+            N = [element for set in N for element in set]
+            #print(N,end="")
             Ns.append(N)
-
+        #print(Ns)
+        #print("")
         return Ns
+
+
+
 
     #=======================================================
     # 日景法の準備（従属グラフを連結成分へ分解し整列したクラス変数を用意）

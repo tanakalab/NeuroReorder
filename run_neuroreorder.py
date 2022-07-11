@@ -78,6 +78,10 @@ if __name__ == "__main__":
 
     subgraph_nodesets = graph.subgraph_nodesets(copied_graph)
     subgraph_nodesets_w = graph.subgraph_nodesets(copied_graph)
+
+    for subgraph_nodeset in subgraph_nodesets_w:
+        for i in range(len(subgraph_nodeset)):
+            subgraph_nodeset[i] = rule_list[subgraph_nodeset[i]-1]._weight
     Ns2 = graph.new_alignment_subgraph_nodesets(subgraph_nodesets,subgraph_nodesets_w,copied_graph)
 
     copied_graph = graph.copied_graph()
@@ -85,6 +89,9 @@ if __name__ == "__main__":
     subgraph_nodesets = graph.subgraph_nodesets(copied_graph)
     subgraph_nodesets_w = graph.subgraph_nodesets(copied_graph)
 
+    for subgraph_nodeset in subgraph_nodesets_w:
+        for i in range(len(subgraph_nodeset)):
+            subgraph_nodeset[i] = rule_list[subgraph_nodeset[i]-1]._weight
     Ns1 = graph.alignment_subgraph_nodesets(subgraph_nodesets,subgraph_nodesets_w,copied_graph)
 
     for i in range(len(Ns1)):

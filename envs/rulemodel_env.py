@@ -97,8 +97,7 @@ class rulemodel_env(gym.core.Env):
         reward = 0
 
 
-        #chosed_nodes = self.calc_graph.single__hikage_method()
-        #self.action_group.append(("Hikage",chosed_nodes))
+
 
         # アクションの値によって使用する発見的解法を変更
         # 0 -> Sub Graph Merging
@@ -122,8 +121,8 @@ class rulemodel_env(gym.core.Env):
             reordered_rulelist = self.calc_graph.complete()
 
             # 報酬計算
-            reward = (-1) * self.compute_reward(reordered_rulelist)
-            #reward = (-1) * reordered_rulelist.filter(self.packetlist)[0]
+            #reward = (-1) * self.compute_reward(reordered_rulelist)
+            reward = (-1) * reordered_rulelist.filter(self.packetlist)[0]
 
             # 終了時に報酬の最高値を更新した場合、その際のルールリストを出力
             if reward > self.max_reward:

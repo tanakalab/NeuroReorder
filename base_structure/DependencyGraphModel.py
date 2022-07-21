@@ -18,17 +18,32 @@ class DependencyGraphModel:
     #=========================================
     def __init__(self,rulelist,packetlist=None,compute_weight=True):
 
-        rule_list = rulelist
-        packet_list = packetlist
+        self.rule_list = rulelist
 
         if compute_weight:
             if not packetlist is None:
-                rulelist.compute_weight(packetlist)
+                self.rule_list.compute_weight(packetlist)
 
         # 各手法の整列済みリスト（ルール番号のリスト）
         self.sgms_reordered_nodelist = []
         self.hikages_reordered_nodelist = []
 
+        # 初期グラフ
+        self.graph = self.create_init_graph(self.rule_list)
+
+        # 計算用グラフ(このグラフ構造のノードを取り除く)
+        self.calculate_graph = self.copied_graph()
+
+        # 手法を適用しグラフから除去したノードリスト
+        self.removed_nodelist = []
+
+        # 日景法の準備
+        self.prepare_hikage_method()
+
+    #=======================================================
+    #                    初期グラフを構築
+    #=======================================================
+    def create_init_graph(self,rule_list):
 
         # グラフ構築(ノード)
         Graph = nx.DiGraph()
@@ -52,7 +67,7 @@ class DependencyGraphModel:
                     edges.append((i+1,j+1,color))
                     Graph.add_edge(i+1,j+1,color=color)
 
-        # グラフ構築(重みを表現し推移辺を削除したグラフを改めて構築)
+        # 重みを表現し推移辺を削除したグラフを改めて構築
         Graph2 = nx.DiGraph()
         for i in range(len(rule_list)):
             if rule_list[i]._weight == 0:
@@ -66,17 +81,7 @@ class DependencyGraphModel:
                 Graph2.add_edge(edges[i][0],edges[i][1],color=edges[i][2])
             Graph.add_edge(edges[i][0],edges[i][1],color=edges[i][2])
 
-        self.rule_list = rule_list
-        # 初期グラフ(これをコピーして計算する)
-        self.graph = Graph2
-
-        # 計算用グラフ(このグラフ構造のノードを取り除く)
-        self.calculate_graph = self.copied_graph()
-
-        # 手法を適用しグラフから除去したノードリスト
-        self.removed_nodelist = []
-
-        self.prepare_hikage_method()
+        return Graph2
 
     #=======================================================
     #                      グラフを出力
@@ -105,6 +110,9 @@ class DependencyGraphModel:
         # 出力
         plt.savefig(file_name)
 
+    #=======================================================
+    #            グラフを表示(GUI環境でのみ実行可)
+    #=======================================================
     def show(self):
         graph = self.create_cutted_graph()
 
@@ -114,6 +122,20 @@ class DependencyGraphModel:
         # 出力
         plt.show()
 
+    #=======================================================
+    #                     グラフをコピー
+    #=======================================================
+    def copied_graph(self):
+        ret_graph = nx.DiGraph()
+        for node in list(self.graph.nodes):
+            ret_graph.add_node(node)
+
+
+        for edge in list(self.graph.edges):
+            ret_graph.add_edge(edge[0],edge[1])
+
+
+        return ret_graph
 
     #=======================================================
     #手法で既に取り除かれているノードを除外した従属グラフを返す
@@ -134,19 +156,32 @@ class DependencyGraphModel:
         #リストを連結して新しいリストにする
         reordered_nodelist = self.sgms_reordered_nodelist + self.hikages_reordered_nodelist
 
-        #print(reordered_nodelist)
-
         ret_rulelist = RuleList()
         for i in range(len(reordered_nodelist)):
             ret_rulelist.append(self.rule_list[reordered_nodelist[i]-1])
 
         return ret_rulelist
 
-    #=================================================================================
-    #=-------------------------------------------------------------------------------=
-    #                                 SGM用のサブ関数
-    #=-------------------------------------------------------------------------------=
-    #=================================================================================
+#=================================================================================
+#=-------------------------------------------------------------------------------=
+#                               全手法共通のサブ関数
+#=-------------------------------------------------------------------------------=
+#=================================================================================
+
+    #=========================================
+    # 整列済みリストにノードを追加し、従属グラフ等から削除
+    #=========================================
+    # 第1引数 -> 追加するルールリスト(この関数を呼び出す手法に対応する整列済みリストを指定)
+    def add_node_to_nodelist(self,reordered_nodelist,choice):
+        reordered_nodelist.append(choice)
+        self.removed_nodelist.append(choice)
+        self.calculate_graph.remove_node(choice)
+        self.delete_from_Ns(choice)
+#=================================================================================
+#=-------------------------------------------------------------------------------=
+#                                 SGM用のサブ関数
+#=-------------------------------------------------------------------------------=
+#=================================================================================
     #=========================================
     # 部分グラフの重み平均を導出
     #=========================================
@@ -167,14 +202,12 @@ class DependencyGraphModel:
     # Gの重み平均一覧から対象のGを選択しreturn
     #=======================================================
     # debugをTrueにすると、各Gの重み平均と選択したGを出力
-    def decide_choice(self,keys,debug=False):
+    def decide_choice(self,keys):
         _max = 0
         return_key = -1
         is_all_weight_is_zero = True
         for i in keys:
             ret = self.sum_of_weight_in_subgraph(i)
-            if debug:
-                print("[%4f] "%(ret),end="")
 
             ave = ret[0] / len(ret[1])
             if ave > _max:
@@ -184,13 +217,8 @@ class DependencyGraphModel:
 
         #キーの重みがすべて0の場合は先頭の要素を選択
         if is_all_weight_is_zero:
-            if debug:
-                print("-> [%4f] "%(keys[0]))
             return keys[0]
-        if debug:
-            print("-> [%4f] "%(return_key))
         return return_key
-
 
     #=================================================================================
     #=-------------------------------------------------------------------------------=
@@ -199,44 +227,18 @@ class DependencyGraphModel:
     #=================================================================================
     def single__sub_graph_mergine(self):
 
-        # グラフをコピー
-        #copied_graph = self.copied_graph()
-        #for element in self.removed_nodelist:
-        #    copied_graph.remove_node(element)
-
-        #print(copied_graph.edges())
         _next = list(self.calculate_graph.nodes)
 
         while True:
+            # 到達可能ノード一覧から導出した部分グラフ一覧を基にノードを選択
             choice = self.decide_choice(_next)
+            # そのノードから到達可能なノードを列挙(自身は含まない)
             _next = list(self.calculate_graph.succ[choice])
+            # 到達可能ノードが無いならそのノードがSGMで選択されるノード
             if len(_next) <= 0:
-                #print("\t|r[%d]|"%(choice))
-                self.sgms_reordered_nodelist.append(choice)
-                self.removed_nodelist.append(choice)
-                self.calculate_graph.remove_node(choice)
-                self.delete_from_Ns(choice)
-                #print(choice)
-                #_next = list(self.graph.nodes)
+                self.add_node_to_nodelist(self.sgms_reordered_nodelist,choice)
                 return choice
-            #print("")
-
         return
-
-
-    # グラフをコピー
-    def copied_graph(self):
-        ret_graph = nx.DiGraph()
-        for node in list(self.graph.nodes):
-            ret_graph.add_node(node)
-
-
-        for edge in list(self.graph.edges):
-            ret_graph.add_edge(edge[0],edge[1])
-
-
-        return ret_graph
-
 
 #=================================================================================
 #=-------------------------------------------------------------------------------=
@@ -250,26 +252,22 @@ class DependencyGraphModel:
     def subgraph_nodesets(self,graph):
         subgraph_nodesets = []
         evallist = list(graph.nodes)
-        #print(evallist)
         while len(evallist) > 0:
             dumplist = []
             pre_evals = []
             pre_evals.append(evallist[0])
             pre_evals += list(nx.all_neighbors(graph,evallist[0]))
-            #print(pre_evals)
             while(len(pre_evals) > 0):
                 # 先頭を取り出して評価対象とし、評価済みリストへ格納
                 target_id = pre_evals.pop(0)
                 dumplist.append(target_id)
                 # 頂点集合を導出
                 vertexs = list(nx.all_neighbors(graph,target_id))
-                #print(vertexs)
                 # 評価済みの頂点は除外
                 new_evals = [vertex for vertex in vertexs if not vertex in dumplist]
                 dumplist += new_evals
                 pre_evals += new_evals
-                #print("PREEVAL",end="")
-                #print(pre_evals)
+
             subgraph_nodesets.append(list(set(dumplist)))
             evallist = [element for element in evallist if not element in dumplist]
         return subgraph_nodesets
@@ -277,136 +275,73 @@ class DependencyGraphModel:
     #=======================================================
     # 各連結成分のノードを整列し二次元配列Nsとして返す
     #=======================================================
-    """
-    def alignment_subgraph_nodesets(self,subgraph_nodesets,subgraph_nodesets_w,copied_graph):
-        # 連結成分内の順序を表すリストN(に重みを付加したタプル)の生成
-        Ns = []
-        for subgraph_nodeset,subgraph_nodeset_w in zip(subgraph_nodesets,subgraph_nodesets_w):
-            #cachelist = subgraph_nodeset #頂点集合
-            N = []
-            #print("<",end="")
-            while len(subgraph_nodeset) > 0:
-                # 現時点で入次数が0なノード番号を抽出
-                matchedlist = [(i,self.rule_list[i-1]._weight) for i in subgraph_nodeset if len(list(self.graph.pred[i])) == 0]
-                # 抽出したノード番号に対応する重みリスト
-                #matchedlist_w = [subgraph_nodeset_w[i] for i in range(len(subgraph_nodeset)) if subgraph_nodeset[i] in matchedlist]
-                #print(matchedlist_w)
-
-                matchedlist.sort(key=lambda x:x[1])
-                matchedlist.reverse()
-                for element in matchedlist:
-                    N.append(element)
-                    self.graph.remove_node(element[0])
-                    subgraph_nodeset.remove(element[0])
-
-            Ns.append(N)
-            #print(">",end="")
-        print(Ns)
-        #print("")
-        return Ns
-    """
-    def alignment_subgraph_nodesets(self,subgraph_nodesets,subgraph_nodesets_w,copied_graph):
+    def alignment_subgraph_nodesets(self,subgraph_nodesets,copied_graph):
         Ns = []
 
-        for subgraph_nodeset,subgraph_nodeset_w in zip(subgraph_nodesets,subgraph_nodesets_w):
+        for subgraph_nodeset in subgraph_nodesets:
             N = []
             appended_list = []
             # 入次数0のノードを計算
-            #print("<",end="")
             matchedlist = [i for i in subgraph_nodeset if len(list(copied_graph.pred[i])) == 0]
             N.append(matchedlist)
-            #print(matchedlist,end="")
-            #print(">",end="")
 
-            #for x in matchedlist:
-            #    print("(%d %d)"%(x,self.rule_list[x-1]._weight),end="")
             appended_list += matchedlist
             for element in matchedlist:
                 subgraph_nodeset.remove(element)
-            """
-            print("")
-            print("AdL -> ",end="")
-            print(appended_list)
-            print("SgNs-> ",end="")
-            print(subgraph_nodeset)
-            """
+
             # 入次数1以上のノードを計算
             while(len([x for x in subgraph_nodeset if not x in appended_list]) > 0):
-                #print("<",end="")
                 matchedlist = [x for x in subgraph_nodeset if len([i for i in list(copied_graph.pred[x]) if not i in appended_list]) == 0 and not x in appended_list]
                 N.append(matchedlist)
-                #print(matchedlist,end="")
-                #print(">",end="")
-                #for x in matchedlist:
-                #    print("(%d %d)"%(x,self.rule_list[x-1]._weight),end="")
-
                 appended_list += matchedlist
 
-                """
-                print("")
-                print("AdL -> ",end="")
-                print(appended_list)
-                print("SgNs-> ",end="")
-                print(subgraph_nodeset)
-                """
-
-
             # 重みを付加したタプルにし、並べ替え
-
             for i in range(len(N)):
                 for j in range(len(N[i])):
-                    #print(" %d "%self.rule_list[N[i][j]-1]._weight,end="")
                     N[i][j] = (N[i][j],self.rule_list[N[i][j]-1]._weight)
                 N[i].sort(key=lambda x:x[1])
                 N[i].reverse()
-            # ネストを展開
+            # ネストを展開し、Nsに追加
             N.reverse()
             N = [element for set in N for element in set]
-            #print(N,end="")
             Ns.append(N)
-        #print(Ns)
-        #print("")
+
         return Ns
 
 
-
+    #=======================================================
+    # Nsを構築し、返す
+    #=======================================================
+    def create_Ns(self,calculate_graph):
+        # 連結成分へ分解
+        subgraph_nodesets = self.subgraph_nodesets(calculate_graph)
+        # 整列
+        Ns = self.alignment_subgraph_nodesets(subgraph_nodesets,calculate_graph)
+        return Ns
 
     #=======================================================
     # 日景法の準備（従属グラフを連結成分へ分解し整列したクラス変数を用意）
     # インスタンスを生成した際に１回だけ実行する
     #=======================================================
     def prepare_hikage_method(self):
-        # グラフをコピー
-        copied_graph = self.copied_graph()
 
-        subgraph_nodesets = self.subgraph_nodesets(copied_graph)
-        subgraph_nodesets_w = self.subgraph_nodesets(copied_graph)
-        for subgraph_nodeset in subgraph_nodesets_w:
-            for i in range(len(subgraph_nodeset)):
-                subgraph_nodeset[i] = self.rule_list[subgraph_nodeset[i]-1]._weight
-        #print("SUBGRAPH NODESETS")
-        #print(subgraph_nodesets)
-        #print(subgraph_nodesets_w)
-
-        self.Ns = self.alignment_subgraph_nodesets(subgraph_nodesets,subgraph_nodesets_w,copied_graph)
+        self.Ns = self.create_Ns(self.calculate_graph)
         # すべてのノードのN上の位置を示す辞書
         self.nodepositions_inNs = dict()
         # 辞書に位置情報を追加
         for i in range(len(self.Ns)):
             for j in range(len(self.Ns[i])):
                 self.nodepositions_inNs[self.Ns[i][j][0]] = [i,j]
-        #print("Ns = ",end="")
-        #print(self.Ns)
-        #print(self.nodepositions_inNs.items())
 
+    #=======================================================
+    # 日景法実行後のNsの更新(各Wを再計算)
+    #=======================================================
     def update_Ns(self,index):
         # 更新後のN
 
         updated_N = []
         for i in reversed(range(len(self.Ns[index]))):
             updated_N.append((self.Ns[index][i][0],self.Ns[index][i][1]))
-        #print("UPDATED_N =",end="")
-        #print(updated_N)
         updated_N.reverse()
 
         for i in range(len(updated_N)):
@@ -414,6 +349,9 @@ class DependencyGraphModel:
 
         self.Ns[index] = updated_N
 
+    #=======================================================
+    # Nsから対応するノードを除去
+    #=======================================================
     def delete_from_Ns(self,index):
         del self.Ns[self.nodepositions_inNs[index][0]][self.nodepositions_inNs[index][1]]
         self.update_Ns(self.nodepositions_inNs[index][0])
@@ -426,14 +364,11 @@ class DependencyGraphModel:
 #=================================================================================
     def single__hikage_method(self):
 
-        subgraph_nodesets = self.subgraph_nodesets(self.calculate_graph)
-        subgraph_nodesets_w = self.subgraph_nodesets(self.calculate_graph)
-        for subgraph_nodeset in subgraph_nodesets_w:
-            for i in range(len(subgraph_nodeset)):
-                subgraph_nodeset[i] = self.rule_list[subgraph_nodeset[i]-1]._weight
-
-        Ns = self.Ns
-        #Ns = self.alignment_subgraph_nodesets(subgraph_nodesets,subgraph_nodesets_w,self.calculate_graph)
+        #####################################################
+        ###      Nsとそれに対応する重みリストWsを計算      ###
+        #####################################################
+        # Ns = self.Ns
+        Ns = self.create_Ns(self.calculate_graph)
 
         ### Wを計算する
         Ws = []
@@ -441,52 +376,39 @@ class DependencyGraphModel:
             w = []
             for i in reversed(range(len(N))):
                 w.append(sum([N[j][1] for j in reversed(range(i,len(N)))]) / (len(N)-i))
-            #print(w)
             w.reverse()
             Ws.append(w)
 
-        #print("Ns = ",end="")
-        #print(self.Ns)
+        #####################################################
+        ### 整列済みリストへ挿入するリストの先端位置の決定 ###
+        #####################################################
 
-        #print("Ws = ",end="")
-        #print(Ws)
-
-
-        ### 整列済みリストへ挿入するリストの先端位置の決定
-
-        # 重みの最小値リストを構築
+        # 各Nの重みの最小値を導出してリストにまとめる
         minimum_weights = [min(W) for W in Ws if len(W)]
-        #print(minimum_weights)
 
-        #Ns全体で最小の重みの値
+        # Ns全体で最小の重みの値
         whole_minimum_weight = min(minimum_weights)
 
-        #添字番号を決定
+        # 最小値のNsでの添字番号を決定
         index_Ns = [min(W) if len(W) > 0 else -1 for W in Ws].index(whole_minimum_weight)
-        #print(self.Ns[index_Ns],whole_minimum_weight,index_Ns)
+
+        # 最小値のN内の添え字番号を決定
         index_N = len(Ws[index_Ns]) - 1
         for element in reversed(range(len(Ws[index_Ns]))):
-            if element == whole_minimum_weight:
+            if Ws[index_Ns][element] == whole_minimum_weight:
                 break
             index_N -= 1
         else:
             AssertionError("最小値がNにありません.")
 
-
-
-        #print(index_Ns,index_N)
-
-        ### 整列済みリストへ挿入し、該当個所をNsから削除
+        ###################################################
+        ### 整列済みリストへ挿入し、該当個所をNsから削除 ###
+        ###################################################
 
         addlist = Ns[index_Ns][index_N:]
         addlist.reverse()
 
-        #print(addlist)
-
         for element in addlist:
-            self.hikages_reordered_nodelist.append(element[0])
-            self.removed_nodelist.append(element[0])
-            self.calculate_graph.remove_node(element[0])
-            self.delete_from_Ns(element[0])
+            self.add_node_to_nodelist(self.hikages_reordered_nodelist,element[0])
 
         return [element[0] for element in addlist]

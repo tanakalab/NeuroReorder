@@ -32,18 +32,24 @@ from base_structure.base_structure import *
 from base_structure.DependencyGraphModel import *
 
 
+#       追加オプション
+# reward_formula : 報酬の計算式.
+#                : filter -> パケット分類を実施し遅延を直接計算 (実質重み変動を考慮)
+#                : init_weight -> 最初に計算した重みとルール位置の積の和 (実質重み変動を無視)
+
 
 class rulemodel_env(gym.core.Env):
     #====================================
     #=            クラス初期化            =
     #====================================
-    def __init__(self,rulelist,packetlist,experiment_title):
+    def __init__(self,rulelist,packetlist,experiment_title,additional_options):
         # パラメータを設定
         self.rulelist = rulelist
         self.packetlist = packetlist
         self.init_graph = DependencyGraphModel(rulelist,packetlist)
         self.calc_graph = None
         self.experiment_title = experiment_title
+        self.additional_options = additional_options
 
         self.dump_count = 1
 
@@ -54,12 +60,11 @@ class rulemodel_env(gym.core.Env):
         # 行動履歴を追うための記録リスト
         self.action_group = []
 
-        #現在実装済みのアクションの数 (SGMと日景法の2つ)
-        self.implemented_action_num = 2
+        #現在実装済みのアクションの数 (Implemented_Actionの列挙型の数)
+        self.implemented_action_num = len(Implemented_Action)
 
         #行動空間の大きさを指定
         self.action_space = gym.spaces.Discrete(self.implemented_action_num)
-
 
         # 状態空間を指定
         # 1次元目　→　ノード番号のリスト
@@ -96,9 +101,6 @@ class rulemodel_env(gym.core.Env):
         done = False
         reward = 0
 
-
-
-
         # アクションの値によって使用する発見的解法を変更
         # 0 -> Sub Graph Merging
         if action == 0:
@@ -108,8 +110,6 @@ class rulemodel_env(gym.core.Env):
         elif action == 1:
             chosed_nodes = self.calc_graph.single__hikage_method()
             self.action_group.append(("Hikage",chosed_nodes))
-
-        #print(chosed_nodes)
 
         # グラフからノードがなくなったら終了判定
         if len(list(self.calc_graph.calculate_graph.nodes)) <= 0:
@@ -121,18 +121,19 @@ class rulemodel_env(gym.core.Env):
             reordered_rulelist = self.calc_graph.complete()
 
             # 報酬計算
-            #reward = (-1) * self.compute_reward(reordered_rulelist)
-            reward = (-1) * reordered_rulelist.filter(self.packetlist)[0]
+            if self.additional_options["reward_formula"] == Reward_Formula.init_weight:
+                reward = (-1) * self.compute_reward(reordered_rulelist)
+            elif self.additional_options["reward_formula"] == Reward_Formula.filter:
+                reward = (-1) * reordered_rulelist.filter(self.packetlist)[0]
 
             # 終了時に報酬の最高値を更新した場合、その際のルールリストを出力
             if reward > self.max_reward:
                 self.max_reward = reward
                 print("\n\nNEW_REWARD -->>\t %d"%(self.max_reward))
-                #print("\t\tDELAY -->>\t %d"%(reordered_rulelist.filter(self.packetlist)[0]))
+
                 self.dump(reordered_rulelist,reward)
 
         return self.transform_rulelist_to_state(),reward,done,{}
-
 
     #========================================
     #  現在のグラフを状態の構造へ変換する関数
@@ -169,14 +170,12 @@ class rulemodel_env(gym.core.Env):
     #=         報酬を計算する関数        =
     #====================================
     def compute_reward(self,reordered_rulelist):
-        # 重みによる報酬計算をする処理 (実装予定)
 
         weight = 0
         for i in range(len(reordered_rulelist)):
             weight += reordered_rulelist[i]._weight * (i+1)
 
         return weight
-
 
     #======================================================
     #=        ルールリストと行動リストを出力する関数        =
@@ -200,8 +199,6 @@ class rulemodel_env(gym.core.Env):
     #====================================
     #=             未使用関数             =
     #====================================
-
-
     def render(self):
         pass
 

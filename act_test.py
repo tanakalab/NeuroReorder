@@ -96,7 +96,6 @@ if __name__ == "__main__":
     ylim = [min_xy[1] - range_y*0.05, max_xy[1] + range_y*0.05]
 
 
-
     if args.actions == None:
         while len(graph.removed_nodelist) < len(list(graph.graph.nodes)):
             chosen_algorithm = input("使用アルゴリズム(SGMの\"s\"または日景の\"h\"):")
@@ -105,10 +104,18 @@ if __name__ == "__main__":
             elif chosen_algorithm == "h":
                 print(graph.single__hikage_method())
             #graph.show()
-            print("Ns = ",end="")
-            print(graph.Ns)
-            print("\t",end="")
-            print(graph.nodepositions_inNs.items())
+            #print("Ns = ",end="")
+            #print(graph.Ns)
+            """
+            subgraph_nodesets = graph.subgraph_nodesets(graph.calculate_graph)
+            subgraph_nodesets_w = graph.subgraph_nodesets(graph.calculate_graph)
+            for subgraph_nodeset in subgraph_nodesets_w:
+                for i in range(len(subgraph_nodeset)):
+                    subgraph_nodeset[i] = graph.rule_list[subgraph_nodeset[i]-1]._weight
+            print(graph.alignment_subgraph_nodesets(subgraph_nodesets,subgraph_nodesets_w,graph.calculate_graph))
+            """
+            #print("\t",end="")
+            #print(graph.nodepositions_inNs.items())
         graph.complete()
         exit()
 

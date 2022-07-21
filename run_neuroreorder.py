@@ -53,8 +53,22 @@ parser.add_argument(
     type=int,
     default=500000,
     help="学習ステップ数.この回数行動したら学習終了.")
+parser.add_argument(
+    "--additional_options",
+    type=str,
+    default="",
+    help="追加の設定をアルファベット小文字で指定する.詳細はリポジトリ上のドキュメント参照.")
+
 
 # ------------------------------------------------------------------
+
+# ------------------------------------------------------------------
+# -----                   追加設定を仕込む                      -----
+# ------------------------------------------------------------------
+# r が入っている -> 重み変動を考慮しない形式
+
+def set_addopts(addopts):
+    additional_options["reward_formula"] = Reward_Formula.init_weight if 'r' in addopts else Reward_Formula.filter
 
 # ------------------------------------------------------------------
 # -----                       main処理                         -----
@@ -70,49 +84,13 @@ if __name__ == "__main__":
     # 学習ステップ数
     max_all_steps = args.max_steps
 
-    """
-    rule_list.compute_weight(packet_list)
-    graph = DependencyGraphModel(rule_list)
+    # 追加オプションの初期設定
+    additional_options = {
+        "reward_formula":Reward_Formula.filter
+    }
+    # 追加オプションをセット
+    set_addopts(args.additional_options)
 
-    copied_graph = graph.copied_graph()
-
-    subgraph_nodesets = graph.subgraph_nodesets(copied_graph)
-    subgraph_nodesets_w = graph.subgraph_nodesets(copied_graph)
-
-    for subgraph_nodeset in subgraph_nodesets_w:
-        for i in range(len(subgraph_nodeset)):
-            subgraph_nodeset[i] = rule_list[subgraph_nodeset[i]-1]._weight
-    Ns2 = graph.new_alignment_subgraph_nodesets(subgraph_nodesets,subgraph_nodesets_w,copied_graph)
-
-    copied_graph = graph.copied_graph()
-
-    subgraph_nodesets = graph.subgraph_nodesets(copied_graph)
-    subgraph_nodesets_w = graph.subgraph_nodesets(copied_graph)
-
-    for subgraph_nodeset in subgraph_nodesets_w:
-        for i in range(len(subgraph_nodeset)):
-            subgraph_nodeset[i] = rule_list[subgraph_nodeset[i]-1]._weight
-    Ns1 = graph.alignment_subgraph_nodesets(subgraph_nodesets,subgraph_nodesets_w,copied_graph)
-
-    for i in range(len(Ns1)):
-        if len(Ns1[i]) != len(Ns2[i]):
-            print("長さ違反")
-            exit()
-        else:
-            for j in range(len(Ns1[i])):
-                if Ns1[i][j][0] != Ns2[i][j][0]:
-                    print("ノード位置違反")
-                    exit()
-                if Ns1[i][j][1] != Ns2[i][j][1]:
-                    print("重み違反")
-                    exit()
-
-
-    print("正常")
-
-
-    exit()
-    """
     # gymに環境を登録し、初期化変数を設定
     register(
         id='rulelistRecontrust-v0',
@@ -120,7 +98,8 @@ if __name__ == "__main__":
         kwargs={
             'rulelist':rule_list,
             'packetlist':packet_list,
-            'experiment_title':args.experiment_title
+            'experiment_title':args.experiment_title,
+            'additional_options':additional_options
         },
     )
 
@@ -136,7 +115,13 @@ if __name__ == "__main__":
     model = keras.models.Sequential([
         keras.layers.Flatten(input_shape=(1,) + env.observation_space.shape),
         keras.layers.Dropout(0.5),
-        keras.layers.Dense(32,activation="relu",kernel_initializer=keras.initializers.TruncatedNormal(),kernel_regularizer=keras.regularizers.l2(0.001)),
+        keras.layers.Dense(128,activation="relu",kernel_initializer=keras.initializers.TruncatedNormal(),kernel_regularizer=keras.regularizers.l2(0.001)),
+        keras.layers.Dropout(0.5),
+        keras.layers.Dense(128,activation="relu",kernel_initializer=keras.initializers.TruncatedNormal(),kernel_regularizer=keras.regularizers.l2(0.001)),
+        keras.layers.Dropout(0.5),
+        keras.layers.Dense(64,activation="relu",kernel_initializer=keras.initializers.TruncatedNormal(),kernel_regularizer=keras.regularizers.l2(0.001)),
+        keras.layers.Dropout(0.5),
+        keras.layers.Dense(64,activation="relu",kernel_initializer=keras.initializers.TruncatedNormal(),kernel_regularizer=keras.regularizers.l2(0.001)),
         keras.layers.Dropout(0.5),
         keras.layers.Dense(32,activation="relu",kernel_initializer=keras.initializers.TruncatedNormal(),kernel_regularizer=keras.regularizers.l2(0.001)),
         keras.layers.Dropout(0.5),
@@ -155,7 +140,7 @@ if __name__ == "__main__":
     #経験蓄積メモリの定義
     memory = SequentialMemory(limit=500000, window_length=1,ignore_episode_boundaries=True)
     #ポリシの選択
-    policy = LinearAnnealedPolicy(EpsGreedyQPolicy(),attr='eps',value_max=.9,value_min=.1,value_test=.05,nb_steps=max_all_steps/10*9)
+    policy = LinearAnnealedPolicy(EpsGreedyQPolicy(),attr='eps',value_max=.99,value_min=.1,value_test=.05,nb_steps=max_all_steps)
 
     #Agent作成
     dqn = DQNAgent(
@@ -163,7 +148,7 @@ if __name__ == "__main__":
         nb_actions=nb_actions,
         memory=memory,
         gamma=.95,
-        nb_steps_warmup=10000,
+        nb_steps_warmup=max_all_steps/20,
         batch_size=128,
         train_interval=5,
         target_model_update=5,

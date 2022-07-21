@@ -51,8 +51,6 @@ class Rule:
         #重み
         self._weight = 0
 
-
-
     #====================================
     #=     合致するかどうか確認する関数      =
     #====================================
@@ -151,7 +149,6 @@ class Rule:
         ret.append(bit_string)
         return ret
 
-
     #====================================
     #= 重複するパケット集合を表すbit列を出力  =
     #====================================
@@ -184,7 +181,6 @@ class Rule:
     def __getitem__(self,key):
         return self.bit_string[key]
 
-
 # ------------------------------------------------------------------
 # -----                      ルールリスト                       -----
 # ------------------------------------------------------------------
@@ -198,8 +194,6 @@ class RuleList:
     def __init__(self,is_print_match_packet=False):
         self.rule_list = []
         self.is_print_match_packet=is_print_match_packet
-
-
 
     #====================================
     #=        ルールを末尾へ追加         =
@@ -221,7 +215,7 @@ class RuleList:
             for j in range(len(self.rule_list)):
                 if self.rule_list[j].match(packet_list[i]):
                     self.rule_list[j]._weight += 1
-
+                    break
 
     #====================================
     #=         パケット分類を行う        =
@@ -238,10 +232,8 @@ class RuleList:
         for i in range(len(self.rule_list)):
             match_number.append(0)
 
-
         #print文用の区切り値
         lap = 10**(len(str(len(packet_list))) - 1)
-
 
         #パケットの数だけループ
         for i in range(len(packet_list)):
@@ -250,7 +242,6 @@ class RuleList:
             if is_print_detail:
                 if i % lap == 0:
                     print("%d / %d is filtered."% (i,len(packet_list)))
-
 
             #遅延
             delay = 0
@@ -262,7 +253,6 @@ class RuleList:
                 if self.rule_list[j].match(packet_list[i]):
                     match_position = j
                     break
-                #j += 1
             if match_position != -1: #どこかに合致した場合
                 match_number[j] += 1
                 match_list.append(self[match_position].evaluate)
@@ -277,10 +267,8 @@ class RuleList:
         return (delay_all,match_list)
 
     #====================================
-    #=           各種アクション           =
+    #=        ルールの位置を移動         =
     #====================================
-
-    # アクション Move
     # 引数 -> rule_pos 移動させるルールの添字番号
     #     -> destination 移動先の添字番号
     # 返り値 -> 成功したかどうか (True or False)
@@ -303,152 +291,6 @@ class RuleList:
             self.rule_list.insert(destination,x)
         return True
 
-    # ******未実装******
-    # アクション Split
-    # 引数 -> rule_pos 分割するルールの添字番号
-    #     -> split_pos 分割するマスク*の位置
-    # 返り値 -> 成功したかどうか (True or False)
-    # ルールのsplit_pos番目にあるマスクを2つに分け，2つのルールにする．
-    def action_split(self,rule_pos,split_pos):
-        return False
-
-    # ******未実装******
-    # アクション Join
-    # 引数 -> rule_pos 結合するルール1つ目の添字番号
-    # 返り値 -> 成功したかどうか (True or False)
-    # rule_posとその一つ下のルールの内，結合可能なビットをマスクにしたルールを追加し，参照した2つのルールを削除する．
-    def action_join(self,rule_pos):
-        return False
-
-    # ******未実装******
-    # アクション Delete
-    # 引数 -> rule_pos 削除するルールの添字番号
-    # 返り値 -> 成功したかどうか (True or False)
-    # 特定の条件に従うルールを削除する．従属関係を保つことが前提．
-    def action_delete(self,rule_pos,split_pos):
-        return False
-
-    # ******未実装******
-    # アクション Replace
-    # 引数 -> rule_pos 置換するルール1つ目の添字番号
-    #      -> length 部分リストの長さ(2以上)
-    # 返り値 -> 成功したかどうか (True or False)
-    # 部分リストをポリシを保つような別の部分リストへ置き換える．できるかこんなん？
-    def action_replace(self,rule_pos,length):
-        return False
-
-    # 従属関係を除去する関数
-    # 引数 -> rule1_pos rule2_pos ルールの添字番号(1は上位ルール,2は下位ルール)
-    # 返り値 -> なし
-    # 重複／従属関係を除去する，
-    # 重複パケットを表示 -> 下位ルールの重複部分を削除
-    def deoverlap(self,rule1_pos,rule2_pos,target_list,overlap_rule_list):
-        #重複しているパケットを構築
-        overlap_bit_string = target_list[rule2_pos].match_packet_bit_string(overlap_rule_list[rule1_pos])
-        cutted_rule_list = []
-        evaluating_rule = target_list[rule2_pos].bit_string
-        #print("EVALUATE_RULE IS [%s]" % evaluating_rule)
-        #print("OVERLAP RULE IS [%s]" % overlap_bit_string)
-        start = 0
-        end = False
-        no_mask = True
-        ret = ""
-        #分割したルールリストを作れるまでループ(ループ回数はビットマスクの数に等しいはず)
-        while not end:
-            previous_mask_pos = -1
-            #print("EVAL RULE IS %s" % evaluating_rule)
-            for i in range(start,len(overlap_rule_list[rule1_pos].bit_string)):
-                #bitが異なる場合(重複パケット集合との比較なので，マスクと0 or 1になるはず)
-                #print(overlap_bit_string + "\t" + evaluating_rule + "\t" + ret)
-                if overlap_bit_string[i] != evaluating_rule[i]:
-                    #1つ目のマスクの場合
-                    if previous_mask_pos == -1:
-                        if no_mask:
-                            no_mask = False
-                        previous_mask_pos = i
-                        ret += "@"
-                    else: #2つ目のマスクがあった場合
-                        #1つ目のマスクがあった場所のbitを重複パケットと異なるものにする
-                        if overlap_bit_string[previous_mask_pos] == "0":
-                            ret = ret[:(self.bind(previous_mask_pos,len(overlap_bit_string)))] + "1" + ret[(self.bind(previous_mask_pos+1,len(overlap_bit_string))):]
-                        else:
-                            ret = ret[:(self.bind(previous_mask_pos,len(overlap_bit_string)))] + "0" + ret[(self.bind(previous_mask_pos+1,len(overlap_bit_string))):]
-                        #残りを分割前ルールからそのまま写す
-                        ret += evaluating_rule[i:]
-                        #print("ONE \t " + ret)
-                        #この状態のルールを分割ルールリストへ追加
-                        cutted_rule_list.append(ret)
-                        #1つ目のマスクがあった場所のbitを重複パケットと同じものにする
-                        if overlap_bit_string[previous_mask_pos] == "0":
-                            ret = ret[:(self.bind(previous_mask_pos,len(overlap_bit_string)))] + "0" + ret[(self.bind(previous_mask_pos+1,len(overlap_bit_string))):]
-                        else:
-                            ret = ret[:(self.bind(previous_mask_pos,len(overlap_bit_string)))] + "1" + ret[(self.bind(previous_mask_pos+1,len(overlap_bit_string))):]
-                        #評価ルールを更新
-                        #print("TWO \t" + ret)
-                        evaluating_rule = ret
-                        #2つ目のマスクを次の比較開始地点とする
-                        start = i
-
-                        ret = ret[:i]
-                        #print("START IS %d" % i)
-                        #forループを抜ける
-                        break
-                else: #bit列が同じ場合はそのまま写す
-                    ret += overlap_bit_string[i]
-                    #print("ADDED %s" % ret)
-            else: #forループが正常終了したならwhileループを終える処理に入る
-                end = True
-            #print(cutted_rule_list)
-
-            #forを正常に抜ける場合 -> マスクが1つしかないルールを評価していて終端に達した or マスクの無いルール -> 重みが0のルール
-            #前者の場合1つ目のマスクがあった場所のbitを重複パケットと異なるものにする
-            if end:
-                if not no_mask:
-                    #print("END OF LOOP %d" % previous_mask_pos)
-
-                    #print(overlap_bit_string + "\t" + evaluating_rule + "\t" + ret)
-                    if overlap_bit_string[previous_mask_pos] == "0":
-                        ret = ret[:(self.bind(previous_mask_pos,len(overlap_bit_string)))] + "1" + ret[(self.bind(previous_mask_pos+1,len(overlap_bit_string))):]
-                    else:
-                        ret = ret[:(self.bind(previous_mask_pos,len(overlap_bit_string)))] + "0" + ret[(self.bind(previous_mask_pos+1,len(overlap_bit_string))):]
-                    #この状態のルールを分割ルールリストへ追加
-                    cutted_rule_list.append(ret)
-                    #whileを抜ける
-                    break
-                #後者の場合は単純に削除できるので分割ルールリストは空のまま
-
-        evaluate = target_list[rule2_pos].evaluate
-
-        del target_list[rule2_pos]
-        for x in cutted_rule_list:
-            ins_rule = Rule(evaluate,x)
-            for j in reversed(range(rule1_pos)):
-                if overlap_rule_list[j].is_cover(ins_rule):
-                    break
-            else:
-                target_list.insert(rule2_pos,ins_rule)
-
-        #print(self)
-
-        return target_list
-
-    def bind(self,i,r):
-        if i<0:
-            #print("0")
-            return 0
-        elif r<i:
-            #print(r)
-            return r
-        else:
-            #print(i)
-            return i
-
-    #====================================
-    #=   一様分布の場合の遅延を計算する関数   =（未実装）
-    #====================================
-    def compute_delay_average(self):
-        return
-
     #====================================
     #=             長さ出力              =
     #====================================
@@ -464,7 +306,6 @@ class RuleList:
     #====================================
     #=       ルールリストのprint処理       =
     #====================================
-
     # is_print_match_packet -> 各ルールに合致するパケットのリストを出力するか(非推奨)
     def __str__(self):
         print("[ ][ ]ルールリスト[ ][ ]")
@@ -492,35 +333,3 @@ class RuleList:
                     else:
                         print("ルール[%d]とルール[%d]は重複関係" % (i+1 , j+1))
         return ""
-
-    #====================================
-    #=       重複関係を全除去する関数       =
-    #====================================
-
-    def deoverlap_all(self):
-        #逆順に調査
-        for i in reversed(range(len(self.rule_list))):
-            overlap_rule_list = []
-            for j in reversed(range(0,i)):
-                #重複していたらリストに追加
-                if self[i].is_overlap(self[j]):
-                    overlap_rule_list.append(self[j])
-            #リストに含まれるルール集合を含まないようなルールを形成
-            target_list = []
-            target_list.append(self.rule_list[i])
-            for j in reversed(range(len(overlap_rule_list))):
-                for k in reversed(range(len(target_list))):
-                    if target_list[k].is_overlap(overlap_rule_list[j]):
-                        target_list = self.deoverlap(j,k,target_list,overlap_rule_list)
-                        #print(len(target_list))
-                print("*----------*%d/%d*----------[%d]*"%(j,len(overlap_rule_list),len(target_list)))
-            #for i in target_list:
-            #    print(i.bit_string + "\t" + i.evaluate)
-            #print("------------------------------------------------------------------------------------------------------------------------------------------")
-
-            print("*===============================================================*\t%d\t/\t%d*==============================================================*"%(i,len(self.rule_list)))
-            #対象の箇所へappend
-            evaluate = self.rule_list[i].evaluate
-            del self.rule_list[i]
-            for x in target_list:
-                self.rule_list.insert(i,x)

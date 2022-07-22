@@ -5,6 +5,7 @@
 # $3 -> シード名称
 # $4 -> ルール数
 
+# テスト変更です
 
 # ClassBenchファイルがあるかチェック
 ZOMLISTFILE="ClassBench/ZOMList.sh"

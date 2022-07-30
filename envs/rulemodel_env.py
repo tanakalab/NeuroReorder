@@ -31,6 +31,8 @@ from base_structure.rulemodel import *
 from base_structure.base_structure import *
 from base_structure.DependencyGraphModel import *
 
+import openpyxl
+
 
 #       追加オプション
 # reward_formula : 報酬の計算式.
@@ -182,7 +184,9 @@ class rulemodel_env(gym.core.Env):
     #======================================================
     def dump(self,rulelist,reward):
         # ルールリストを出力
-        with open("Dump/"+self.experiment_title+"/Rule_{"+str(self.dump_count)+"}_["+str(reward)+"]","w",encoding="utf-8",newline="\n") as write_file:
+        experiment_title = self.experiment_title if self.additional_options['sample_number'] is None else "sample"+str(self.additional_options['sample_number'])
+
+        with open("Dump/"+experiment_title+"/Rule_{"+str(self.dump_count)+"}_["+str(reward)+"]","w",encoding="utf-8",newline="\n") as write_file:
 
             for i in range(len(rulelist)):
                 if rulelist[i].evaluate == "Accept":
@@ -190,9 +194,14 @@ class rulemodel_env(gym.core.Env):
                 elif rulelist[i].evaluate == "Deny":
                     write_file.write("Deny\t"+rulelist[i].bit_string+"\n")
         # 行動一覧を出力
-        with open("Dump/"+self.experiment_title+"/Actions_{"+str(self.dump_count)+"}","w",encoding="utf-8",newline="\n") as write_file:
+        with open("Dump/"+experiment_title+"/Actions_{"+str(self.dump_count)+"}","w",encoding="utf-8",newline="\n") as write_file:
             for action in self.action_group:
                 write_file.write(str(action[0]) + "\t" + " ".join(map(str,action[1])) + "\n")
+
+        # Excelの対応箇所に書き込み        
+        position = 'B' + str(1+self.additional_options['sample_number'])
+        ExcelController.write_result_to_excel(self.experiment_title,position,reward*-1)
+        print("EXCELにNeuroReorderサンプル"+str(self.additional_options['sample_number'])+"の結果値を書き込みました.")
 
         self.dump_count += 1
 

@@ -58,6 +58,11 @@ parser.add_argument(
     type=str,
     default="",
     help="追加の設定をアルファベット小文字で指定する.詳細はリポジトリ上のドキュメント参照.")
+parser.add_argument(
+    "--sample_number",
+    type=int,
+    default=None,
+    help="サンプル番号.Excelに結果を書き込む場合は指定.")
 
 
 # ------------------------------------------------------------------
@@ -86,7 +91,8 @@ if __name__ == "__main__":
 
     # 追加オプションの初期設定
     additional_options = {
-        "reward_formula":Reward_Formula.filter
+        "reward_formula":Reward_Formula.filter,     # 報酬設計
+        "sample_number":args.sample_number          # Excelに書き込む際の位置(サンプル番号)
     }
     # 追加オプションをセット
     set_addopts(args.additional_options)
@@ -133,7 +139,9 @@ if __name__ == "__main__":
 
 
     # 実験ファイル保存用ディレクトリの作成・整理
-    os.makedirs("Dump/"+args.experiment_title,exist_ok=True)
+    experiment_title = args.experiment_title if args.sample_number is None else "sample"+str(args.sample_number)
+
+    os.makedirs("Dump/"+experiment_title,exist_ok=True)
 
 
     # ------------------------- ここからKeras-RLの処理 ------------------------
@@ -161,16 +169,16 @@ if __name__ == "__main__":
     history = dqn.fit(env,nb_steps=max_all_steps,visualize=False, verbose=1,log_interval=max_all_steps/10,nb_max_episode_steps=max_all_steps)
 
     #学習した重みを保存
-    dqn.save_weights("Dump/"+args.experiment_title+"/nnw.hdf5",overwrite=True)
+    dqn.save_weights("Dump/"+experiment_title+"/nnw.hdf5",overwrite=True)
 
     #グラフ化
     plt.plot(history.history['nb_episode_steps'], label='nb_episode_steps',linewidth=1)
     plt.legend()
-    plt.savefig("Dump/"+args.experiment_title+"/nb_episode_steps.png")
+    plt.savefig("Dump/"+experiment_title+"/nb_episode_steps.png")
     plt.clf()
     plt.plot(history.history['episode_reward'], label='episode_reward',linewidth=1)
     plt.legend()
-    plt.savefig("Dump/"+args.experiment_title+"/episode_reward.png")
+    plt.savefig("Dump/"+experiment_title+"/episode_reward.png")
 
     # ------------------------- ここまでKeras-RLの処理 ------------------------
 

@@ -5,13 +5,15 @@
 # ------------------------------------------------------------------
 from base_structure.rulemodel import *
 from enum import Enum, auto
+import os
+import openpyxl
 
 # ------------------------------------------------------------------
 # -----           実装している手法を表現する列挙型              -----
 # ------------------------------------------------------------------
 class Implemented_Action(Enum):
     SGM = 0
-    HikageMethod = 1
+    Hikage = 1
     #SimpleChoosing = 2
 
     def __len__(self):
@@ -24,6 +26,62 @@ class Implemented_Action(Enum):
 class Reward_Formula(Enum):
     filter = auto()
     init_weight = auto()
+
+# ------------------------------------------------------------------
+# -----            Excelファイルへの入出力を管理               -----
+# ------------------------------------------------------------------
+class ExcelController:
+    
+    filepath1 = 'Dump/'
+    filepath2 = '/latency_summary.xlsx'
+    
+    @staticmethod
+    def init_excel():
+        wb = openpyxl.Workbook()
+        sheet = wb.worksheets[0]
+
+        # 初期遅延と機械学習は固定
+        sheet['A1'] = "Initial"
+        sheet['B1'] = "NeuroReorder"
+        # その他 発見的解法
+        for i in range(len(Implemented_Action)):
+            sheet[chr(ord('C') + i) + '1'] = Implemented_Action._member_names_[i]
+        return wb
+
+    @staticmethod
+    def load_wb(experiment_title):
+            if os.path.exists(ExcelController.filepath1+experiment_title+ExcelController.filepath2):
+                return openpyxl.load_workbook(ExcelController.filepath1+experiment_title+ExcelController.filepath2)
+            else:
+                return ExcelController.init_excel()
+
+
+
+    @staticmethod
+    def write_result_to_excel(experiment_title,position,value):    
+        # ファイルロード(ない場合は初期化)
+        wb = ExcelController.load_wb(experiment_title)
+
+        # 対応するセルに書き込み
+        sheet = wb.worksheets[0]
+        sheet[position] = value
+
+        # セーブ・クローズ
+        wb.save(ExcelController.filepath1+experiment_title+ExcelController.filepath2)
+        wb.close()
+
+    @staticmethod 
+    def is_value_in_excelfile(experiment_title,position):
+        wb = ExcelController.load_wb(experiment_title)
+        sheet = wb.worksheets[0]
+
+        return sheet[position].value is not None
+
+
+
+
+
+
 
 
 

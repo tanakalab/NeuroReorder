@@ -18,6 +18,7 @@ ClassBenchで生成したルールリストとパケット集合を入力し、�
 - numpy 1.19.5
 - matplotlib 3.3.4
 - networkx 2.6.3
+- openpyxl
 
 その他必要なライブラリを言われた場合は適時入れること。たしかpydotとかpillowとか言われた気がする。
 

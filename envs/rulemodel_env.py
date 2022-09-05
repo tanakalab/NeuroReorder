@@ -112,6 +112,12 @@ class rulemodel_env(gym.core.Env):
         elif action == 1:
             chosed_nodes = self.calc_graph.single__hikage_method()
             self.action_group.append(("Hikage",chosed_nodes))
+        # 2 -> Simple Weight Choose
+        elif action == 2:
+            chosed_nodes = self.calc_graph.simple_weight_choose()
+            self.action_group.append(("SWC",[chosed_nodes]))
+
+
 
         # グラフからノードがなくなったら終了判定
         if len(list(self.calc_graph.calculate_graph.nodes)) <= 0:
@@ -198,10 +204,11 @@ class rulemodel_env(gym.core.Env):
             for action in self.action_group:
                 write_file.write(str(action[0]) + "\t" + " ".join(map(str,action[1])) + "\n")
 
-        # Excelの対応箇所に書き込み        
-        position = 'B' + str(1+self.additional_options['sample_number'])
-        ExcelController.write_result_to_excel(self.experiment_title,position,reward*-1)
-        print("EXCELにNeuroReorderサンプル"+str(self.additional_options['sample_number'])+"の結果値を書き込みました.")
+        if self.additional_options["sample_number"] != None:
+            # Excelの対応箇所に書き込み
+            position = 'B' + str(1+self.additional_options['sample_number'])
+            ExcelController.write_result_to_excel(self.experiment_title,position,reward*-1)
+            print("EXCELにNeuroReorderサンプル"+str(self.additional_options['sample_number'])+"の結果値を書き込みました.")
 
         self.dump_count += 1
 

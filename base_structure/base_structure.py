@@ -14,7 +14,7 @@ import openpyxl
 class Implemented_Action(Enum):
     SGM = 0
     Hikage = 1
-    #SimpleChoosing = 2
+    SimpleWeightChoose = 2
 
     def __len__(self):
         return len([*cls.__members__.values()])

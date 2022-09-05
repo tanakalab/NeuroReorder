@@ -81,7 +81,6 @@ if __name__ == "__main__":
     if args.actions != None:
         action_list = BS.create_actionlist(args.actions)
 
-
     # グラフ構築のテスト
 
     graph = DependencyGraphModel(rule_list)
@@ -103,7 +102,10 @@ if __name__ == "__main__":
                 print(graph.single__sub_graph_mergine())
             elif chosen_algorithm == "h":
                 print(graph.single__hikage_method())
-            #graph.show()
+            elif chosen_algorithm == "w":
+                graph.simple_weight_choose()
+
+            graph.show()
             #print("Ns = ",end="")
             #print(graph.Ns)
             """

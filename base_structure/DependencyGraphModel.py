@@ -412,3 +412,21 @@ class DependencyGraphModel:
             self.add_node_to_nodelist(self.hikages_reordered_nodelist,element[0])
 
         return [element[0] for element in addlist]
+
+#=================================================================================
+#=-------------------------------------------------------------------------------=
+#                                   単純重み選択
+#=-------------------------------------------------------------------------------=
+#=================================================================================
+    def simple_weight_choose(self):
+
+        node_list = list(self.calculate_graph.nodes)
+        weight_list = []
+        for node in node_list:
+            if len(list(self.calculate_graph.succ[node])) == 0:
+                weight_list.append((self.rule_list[node-1]._weight,node))
+
+        max_weight = max(weight_list)
+
+        self.add_node_to_nodelist(self.sgms_reordered_nodelist,max_weight[1])
+        return max_weight[1]

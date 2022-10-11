@@ -1,4 +1,4 @@
-# 従属グラフに対して各アクションを適用するテスト
+# 出力したアクションリストを分析する
 
 # ------------------------------------------------------------------
 # -----                      ライブラリ定義                     -----
@@ -38,6 +38,12 @@ parser.add_argument(
     type=str,
     default=None,
     help="読み込むパケットファイルのパス.ClassBenchルール変換プログラムの6番を使用すること.無指定の場合は一様分布(全ての場合のパケット1つずつ).")
+parser.add_argument(
+    "--dump_movie",
+    type=bool,
+    default=False,
+    help="行動履歴を動画として出力する場合はTrueにする．")
+
 
 #=======================================================
 #              グラフ画像を返す(動画作成用)
@@ -122,6 +128,18 @@ if __name__ == "__main__":
         exit()
 
     else:
+
+        print("SGM    Percentage : %8f"%(len([sgm[0] for sgm in action_list if sgm[0] == "SGM"])/ len(action_list)))
+        print("Hikage Percentage : %8f"%(len([sgm[0] for sgm in action_list if sgm[0] == "Hikage"])/ len(action_list)))
+        print("SWC    Percentage : %8f"%(len([sgm[0] for sgm in action_list if sgm[0] == "SWC"])/ len(action_list)))
+
+
+        
+
+
+        if not args.dump_movie:
+            exit()
+
         print("START MP4 CREATE")
 
         ani = animation.FuncAnimation(fig,update,init_func=init_func,fargs = ("GRAPH",action_list,pos,graph),interval=300,frames=len(action_list))

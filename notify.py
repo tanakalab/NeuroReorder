@@ -19,11 +19,20 @@ parser.add_argument(
     type=str,
     default="EXPERIMENT",
     help="実験名.")
+parser.add_argument(
+    "--tag",
+    type=str,
+    default="end",
+    help="実験の通知タイミングを表すタグ. start or end,")
 
 
 def main():
     args = parser.parse_args()
 
+    if args.tag == "start":
+        tag_msg = "]を開始しました。"
+    elif args.tag == "end":
+        tag_msg =  "]が終了しました。"
 
     with open("notify_token",mode="r") as raw_tokenfile:
         token = raw_tokenfile.read()
@@ -32,8 +41,8 @@ def main():
 
     url = "https://notify-api.line.me/api/notify"
     headers = {"Authorization": f'Bearer {token}'}
-
-    message = "実験[" + args.experiment_title + "]が終了しました。"
+    
+    message = "実験[" + args.experiment_title + tag_msg
 
     data = {'message' : message}
     r = requests.post(url,headers=headers,data=data)

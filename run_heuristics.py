@@ -86,8 +86,10 @@ if __name__ == "__main__":
     reordered_latency = reordered_rulelist.filter(packet_list)[0]
     # experiment_titleまたはsample_numberどちらかが指定されていない場合は書き込まない
     if args.experiment_title == None:
+        print("遅延："+str(reordered_latency))
         exit()
     if args.sample_number == None:
+        print("遅延："+str(reordered_latency))
         exit()
 
 

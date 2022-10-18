@@ -39,6 +39,11 @@ parser.add_argument(
     default=None,
     help="読み込むパケットファイルのパス.ClassBenchルール変換プログラムの6番を使用すること.無指定の場合は一様分布(全ての場合のパケット1つずつ).")
 parser.add_argument(
+    "--figsize",
+    type=int,
+    default=100,
+    help="図のサイズ.")
+parser.add_argument(
     "--dump_movie",
     type=bool,
     default=False,
@@ -62,14 +67,13 @@ def update(i,graph_title,action_list,node_initial_pos,graph):
     for j in range(i):
         graph.graph.remove_nodes_from(action_list[j][1])
 
-
+    node_size = [node["size"]*10 for node in graph.graph.nodes.values()]
     node_color = [node["color"] for node in graph.graph.nodes.values()]
     edge_color = [edge["color"] for edge in graph.graph.edges.values()]
 
-
     #node_initial_pos = nx.nx_pydot.pydot_layout(graph.graph,prog='dot')
-    nx.draw_networkx(graph.graph,pos=node_initial_pos,edge_color=edge_color,node_color=node_color,font_size=1)
-    plt.title(graph_title + "action_num=" + str(i))
+    nx.draw_networkx(graph.graph,pos=node_initial_pos,edge_color=edge_color,node_color=node_color,node_size=node_size,font_size=1)
+    plt.title(action_list[i][0])
 
 
 # ------------------------------------------------------------------
@@ -91,7 +95,7 @@ if __name__ == "__main__":
 
     graph = DependencyGraphModel(rule_list)
 
-    fig, ax = plt.subplots(1, 1, figsize=(30, 30))
+    fig, ax = plt.subplots(1, 1, figsize=(args.figsize, args.figsize))
     pos = nx.nx_pydot.pydot_layout(graph.graph,prog='dot')
     # フレームの軸を固定
     array_pos = np.array(list(pos.values()))
@@ -139,6 +143,8 @@ if __name__ == "__main__":
 
         if not args.dump_movie:
             exit()
+
+    
 
         print("START MP4 CREATE")
 

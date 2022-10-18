@@ -71,23 +71,40 @@ if __name__ == "__main__":
     graph = DependencyGraphModel(rule_list)
 
 
+
+    action_group = []
     # 発見的解法を実行
     while len(graph.removed_nodelist) < len(list(graph.graph.nodes)):
         if args.heuristics == "SGM":
-            graph.single__sub_graph_mergine()
+            chosed_nodes = graph.single__sub_graph_mergine()
+            action_group.append(("SGM",[chosed_nodes]))
         elif args.heuristics == "Hikage":
-            graph.single__hikage_method()
+            chosed_nodes = graph.single__hikage_method()
+            action_group.append(("Hikage",chosed_nodes))
         else:
             AssertionError("発見的解法指定エラー")
+
+
+
 
     # 並べ替え後ルールリスト
     reordered_rulelist = graph.complete()
     # 遅延を導出
     reordered_latency = reordered_rulelist.filter(packet_list)[0]
     # experiment_titleまたはsample_numberどちらかが指定されていない場合は書き込まない
+
+
+
     if args.experiment_title == None:
         print("遅延："+str(reordered_latency))
         exit()
+
+    if args.heuristics in ["SGM","Hikage"]:
+        with open("Dump/"+args.experiment_title+"/" + args.heuristics + "sACTIONLIST","w",encoding="utf-8",newline="\n") as write_file:
+            for action in action_group:
+                write_file.write(str(action[0]) + "\t" + " ".join(map(str,action[1])) + "\n")
+
+
     if args.sample_number == None:
         print("遅延："+str(reordered_latency))
         exit()

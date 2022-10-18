@@ -3,7 +3,8 @@ Datas/*
 nnw.hdf5
 notify_token
 ClassBench/*
-
+logs/*
+nohup.out
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

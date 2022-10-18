@@ -8,6 +8,7 @@ import math
 import argparse
 import random
 import os
+import glob
 # グラフライブラリとプロットライブラリ
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -16,7 +17,6 @@ import matplotlib.pyplot as plt
 import gym
 from gym.envs.registration import register
 import tensorboard
-from tensorflow import keras
 from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines.common.vec_env import SubprocVecEnv
 from stable_baselines import PPO2
@@ -123,9 +123,15 @@ def main():
     # 環境呼び出し
     env = gym.make('rulelistRecontrust-v0')
 
+    # 実験結果まとめフォルダ作成
+    os.makedirs('Dump/'+args.experiment_title,exist_ok=True)
+
     # tensorboard用ログフォルダ作成
-    log_dir = './logs'
-    os.makedirs(log_dir,exist_ok=True)
+    log_dir = 'Dump/'+args.experiment_title
+    if args.sample_number != None:
+        log_dir = 'Dump/sample' + str(args.sample_number)
+        os.makedirs(log_dir,exist_ok=True)
+
 
     # 学習試行
     train_env = SubprocVecEnv([lambda: env for i in range(args.num_env)])
@@ -134,6 +140,21 @@ def main():
     train_env.close()
 
 
+    # Excelに書き込み
+    if args.sample_number == None:
+        exit()
+
+    position = 'B' + str(1+args.sample_number)
+    # 出力されたファイル群から遅延の最小値を取得
+    minimum_latency = min([x.split('/')[-1].split('\\')[-1].split('s')[0] for x in glob.glob("Dump/sample" + str(args.sample_number) + "/*sRULE")])
+
+
+    ExcelController.write_result_to_excel(args.experiment_title,position,minimum_latency)
+    print("EXCELにNeuroReorderサンプル"+str(args.sample_number)+"の結果値を書き込みました.")
+
+
+
+    """
     # テスト試行
     test_env = DummyVecEnv([lambda: gym.make(ENV_ID)])    
     state = test_env.reset()
@@ -144,6 +165,6 @@ def main():
             print("遅延：" + str(rewards))
             break
     test_env.close()
-
+    """
 if __name__ == "__main__":
     main()

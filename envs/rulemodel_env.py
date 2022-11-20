@@ -23,6 +23,7 @@
 # -----                      ライブラリ定義                     -----
 # ------------------------------------------------------------------
 import numpy as np
+import glob
 # 強化学習関連
 import gym
 import gym.spaces
@@ -137,7 +138,6 @@ class rulemodel_env(gym.core.Env):
             # 終了時に報酬の最高値を更新した場合、その際のルールリストを出力
             if reward > self.max_reward:
                 self.max_reward = reward
-                print("\n\nNEW_REWARD -->>\t %d"%(self.max_reward))
 
                 self.dump(reordered_rulelist,reward)
 
@@ -189,10 +189,21 @@ class rulemodel_env(gym.core.Env):
     #=        ルールリストと行動リストを出力する関数        =
     #======================================================
     def dump(self,rulelist,reward):
+        
+
         # ルールリストを出力
         experiment_title = self.experiment_title if self.additional_options['sample_number'] is None else "sample"+str(self.additional_options['sample_number'])
 
-        with open("Dump/"+experiment_title+"/Rule_{"+str(self.dump_count)+"}_["+str(reward)+"]","w",encoding="utf-8",newline="\n") as write_file:
+        # 現在の最小値より大きい場合は出力しない(並列処理中に各プロセス間で最小値を共有できないのでフォルダ検索して確認)
+        print([int(x.split('/')[-1].split('\\')[-1].split('s')[0]) for x in glob.glob("Dump/" + experiment_title + "/*sRULE")])
+        exist_latency_list = [int(x.split('/')[-1].split('\\')[-1].split('s')[0]) for x in glob.glob("Dump/" + experiment_title + "/*sRULE")]
+        if len(exist_latency_list) > 0:
+            if -reward >= min(exist_latency_list):
+                return
+
+        print("\n\nNEW_REWARD -->>\t %d"%(-reward))
+
+        with open("Dump/"+experiment_title+"/" + str(-reward) + "sRULE","w",encoding="utf-8",newline="\n") as write_file:
 
             for i in range(len(rulelist)):
                 if rulelist[i].evaluate == "Accept":
@@ -200,15 +211,9 @@ class rulemodel_env(gym.core.Env):
                 elif rulelist[i].evaluate == "Deny":
                     write_file.write("Deny\t"+rulelist[i].bit_string+"\n")
         # 行動一覧を出力
-        with open("Dump/"+experiment_title+"/Actions_{"+str(self.dump_count)+"}","w",encoding="utf-8",newline="\n") as write_file:
+        with open("Dump/"+experiment_title+"/" + str(-reward) + "sACTIONLIST","w",encoding="utf-8",newline="\n") as write_file:
             for action in self.action_group:
                 write_file.write(str(action[0]) + "\t" + " ".join(map(str,action[1])) + "\n")
-
-        if self.additional_options["sample_number"] != None:
-            # Excelの対応箇所に書き込み
-            position = 'B' + str(1+self.additional_options['sample_number'])
-            ExcelController.write_result_to_excel(self.experiment_title,position,reward*-1)
-            print("EXCELにNeuroReorderサンプル"+str(self.additional_options['sample_number'])+"の結果値を書き込みました.")
 
         self.dump_count += 1
 

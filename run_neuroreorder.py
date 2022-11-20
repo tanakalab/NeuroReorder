@@ -8,6 +8,7 @@ import math
 import argparse
 import random
 import os
+import glob
 # グラフライブラリとプロットライブラリ
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -15,11 +16,11 @@ import matplotlib.pyplot as plt
 # 機械学習関連
 import gym
 from gym.envs.registration import register
-from tensorflow import keras
-from rl.agents.dqn import DQNAgent
-from rl.policy import LinearAnnealedPolicy
-from rl.policy import EpsGreedyQPolicy
-from rl.memory import SequentialMemory
+import tensorboard
+from stable_baselines.common.vec_env import DummyVecEnv
+from stable_baselines.common.vec_env import SubprocVecEnv
+from stable_baselines import PPO2
+from stable_baselines.common import set_global_seeds
 
 # 自前環境
 from base_structure.rulemodel import *
@@ -63,6 +64,11 @@ parser.add_argument(
     type=int,
     default=None,
     help="サンプル番号.Excelに結果を書き込む場合は指定.")
+parser.add_argument(
+    "--num_env",
+    type=int,
+    default=1,
+    help="マルチプロセッシングする際の環境の数.")
 
 
 # ------------------------------------------------------------------
@@ -71,15 +77,20 @@ parser.add_argument(
 # -----                   追加設定を仕込む                      -----
 # ------------------------------------------------------------------
 # r が入っている -> 重み変動を考慮しない形式
+ENV_ID = 'rulelistRecontrust-v0'
 
-def set_addopts(addopts):
-    additional_options["reward_formula"] = Reward_Formula.init_weight if 'r' in addopts else Reward_Formula.filter
+def make_env(env_id,rank,seed=0):
+    def _init():
+        env = gym.make(env_id)
+        env.seed(seed + rank)
+        return env
+    set_global_seeds(seed)
+    return _init
 
 # ------------------------------------------------------------------
 # -----                       main処理                         -----
 # ------------------------------------------------------------------
-if __name__ == "__main__":
-
+def main():
     args = parser.parse_args()
     # ルールリストを形成
     rule_list = BS.create_rulelist(args.rules)
@@ -94,8 +105,8 @@ if __name__ == "__main__":
         "reward_formula":Reward_Formula.filter,     # 報酬設計
         "sample_number":args.sample_number          # Excelに書き込む際の位置(サンプル番号)
     }
-    # 追加オプションをセット
-    set_addopts(args.additional_options)
+
+    additional_options["reward_formula"] = Reward_Formula.init_weight if 'r' in args.additional_options else Reward_Formula.filter
 
     # gymに環境を登録し、初期化変数を設定
     register(
@@ -112,74 +123,51 @@ if __name__ == "__main__":
     # 環境呼び出し
     env = gym.make('rulelistRecontrust-v0')
 
-    # 環境初期化
-    env.reset()
+    # 実験結果まとめフォルダ作成
+    os.makedirs('Dump/'+args.experiment_title,exist_ok=True)
 
-    # Kerasによるニューラルネットワークモデル作成
-
-    nb_actions = env.action_space.n
-    model = keras.models.Sequential([
-        keras.layers.Flatten(input_shape=(1,) + env.observation_space.shape),
-        keras.layers.Dropout(0.5),
-        keras.layers.Dense(128,activation="relu",kernel_initializer=keras.initializers.TruncatedNormal(),kernel_regularizer=keras.regularizers.l2(0.001)),
-        keras.layers.Dropout(0.5),
-        keras.layers.Dense(128,activation="relu",kernel_initializer=keras.initializers.TruncatedNormal(),kernel_regularizer=keras.regularizers.l2(0.001)),
-        keras.layers.Dropout(0.5),
-        keras.layers.Dense(64,activation="relu",kernel_initializer=keras.initializers.TruncatedNormal(),kernel_regularizer=keras.regularizers.l2(0.001)),
-        keras.layers.Dropout(0.5),
-        keras.layers.Dense(64,activation="relu",kernel_initializer=keras.initializers.TruncatedNormal(),kernel_regularizer=keras.regularizers.l2(0.001)),
-        keras.layers.Dropout(0.5),
-        keras.layers.Dense(32,activation="relu",kernel_initializer=keras.initializers.TruncatedNormal(),kernel_regularizer=keras.regularizers.l2(0.001)),
-        keras.layers.Dropout(0.5),
-        keras.layers.Dense(nb_actions,activation="softmax"),
-    ])
-
-    # モデル出力
-    model.summary()
+    # tensorboard用ログフォルダ作成
+    log_dir = 'Dump/'+args.experiment_title
+    if args.sample_number != None:
+        log_dir = 'Dump/sample' + str(args.sample_number)
+        os.makedirs(log_dir,exist_ok=True)
 
 
-    # 実験ファイル保存用ディレクトリの作成・整理
-    experiment_title = args.experiment_title if args.sample_number is None else "sample"+str(args.sample_number)
+    # 学習試行
+    train_env = SubprocVecEnv([lambda: env for i in range(args.num_env)])
+    model = PPO2('MlpLstmPolicy',train_env,verbose=1,tensorboard_log=log_dir,
+    n_steps=8,
+    learning_rate=0.025,
+    gamma=0.95)
+    model.learn(total_timesteps = args.max_steps)
+    train_env.close()
 
-    os.makedirs("Dump/"+experiment_title,exist_ok=True)
+
+    # Excelに書き込み
+    if args.sample_number == None:
+        exit()
+
+    position = 'B' + str(1+args.sample_number)
+    # 出力されたファイル群から遅延の最小値を取得
+    minimum_latency = min([x.split('/')[-1].split('\\')[-1].split('s')[0] for x in glob.glob("Dump/sample" + str(args.sample_number) + "/*sRULE")])
 
 
-    # ------------------------- ここからKeras-RLの処理 ------------------------
-    #経験蓄積メモリの定義
-    memory = SequentialMemory(limit=500000, window_length=1,ignore_episode_boundaries=True)
-    #ポリシの選択
-    policy = LinearAnnealedPolicy(EpsGreedyQPolicy(),attr='eps',value_max=.99,value_min=.1,value_test=.05,nb_steps=max_all_steps)
+    ExcelController.write_result_to_excel(args.experiment_title,position,minimum_latency)
+    print("EXCELにNeuroReorderサンプル"+str(args.sample_number)+"の結果値を書き込みました.")
 
-    #Agent作成
-    dqn = DQNAgent(
-        model=model,
-        nb_actions=nb_actions,
-        memory=memory,
-        gamma=.95,
-        nb_steps_warmup=max_all_steps/20,
-        batch_size=128,
-        train_interval=5,
-        target_model_update=5,
-        policy=policy
-    )
-    #DQNAgentのコンパイル
-    dqn.compile(keras.optimizers.Adam(lr=1e-8),metrics=['mae'])
 
-    #学習開始
-    history = dqn.fit(env,nb_steps=max_all_steps,visualize=False, verbose=1,log_interval=max_all_steps/10,nb_max_episode_steps=max_all_steps)
 
-    #学習した重みを保存
-    dqn.save_weights("Dump/"+experiment_title+"/nnw.hdf5",overwrite=True)
-
-    #グラフ化
-    plt.plot(history.history['nb_episode_steps'], label='nb_episode_steps',linewidth=1)
-    plt.legend()
-    plt.savefig("Dump/"+experiment_title+"/nb_episode_steps.png")
-    plt.clf()
-    plt.plot(history.history['episode_reward'], label='episode_reward',linewidth=1)
-    plt.legend()
-    plt.savefig("Dump/"+experiment_title+"/episode_reward.png")
-
-    # ------------------------- ここまでKeras-RLの処理 ------------------------
-
-# ------------------------------------------------------------------
+    """
+    # テスト試行
+    test_env = DummyVecEnv([lambda: gym.make(ENV_ID)])    
+    state = test_env.reset()
+    while True:
+        action,_ = model.predict(state,deterministic=True)
+        state,rewards,done,info = test_env.step(action)
+        if done:
+            print("遅延：" + str(rewards))
+            break
+    test_env.close()
+    """
+if __name__ == "__main__":
+    main()

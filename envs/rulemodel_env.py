@@ -93,6 +93,10 @@ class rulemodel_env(gym.core.Env):
         # 従属グラフを初期化
         self.calc_graph =  DependencyGraphModel(self.rulelist,self.packetlist,False)
 
+        # 重み0ルールを事前に日景法整列済みリストへ格納
+        chosed_nodes = self.calc_graph.auxiliary_hikage()
+        self.action_group.append(("AuxHKG",chosed_nodes))
+
         return self.transform_rulelist_to_state()
 
     #====================================
@@ -117,6 +121,12 @@ class rulemodel_env(gym.core.Env):
         elif action == 2:
             chosed_nodes = self.calc_graph.simple_weight_choose()
             self.action_group.append(("SWC",[chosed_nodes]))
+        # 3 -> Auxiliary Hikage
+        #elif action == 3:
+        #    chosed_nodes = self.calc_graph.auxiliary_hikage()
+        #    self.action_group.append(("AuxHKG",chosed_nodes))
+
+
 
 
 

@@ -437,3 +437,28 @@ class DependencyGraphModel:
 #                                   下位整理(日景法の補助)
 #=-------------------------------------------------------------------------------=
 #=================================================================================
+    def auxiliary_hikage(self):
+        node_list = list(self.calculate_graph.nodes)
+        weight_list = []
+        for node in node_list:
+            if len(list(self.calculate_graph.pred[node])) == 0:
+                weight_list.append((self.rule_list[node-1]._weight,node))
+
+
+        min_weight = min(weight_list)[0]
+
+
+        target_nodelist = [element[1] for element in weight_list if element[0] == min_weight]
+        for element in target_nodelist:
+            self.add_node_to_nodelist(self.hikages_reordered_nodelist,element)
+
+        return target_nodelist
+
+
+
+
+#=================================================================================
+#=-------------------------------------------------------------------------------=
+#     Zero Weight Exclusion (従属グラフを全捜査し重み0のルールが持つ従属関係を全撤去)
+#=-------------------------------------------------------------------------------=
+#=================================================================================

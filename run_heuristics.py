@@ -103,6 +103,13 @@ if __name__ == "__main__":
         with open("Dump/"+args.experiment_title+"/" + args.heuristics + "sACTIONLIST","w",encoding="utf-8",newline="\n") as write_file:
             for action in action_group:
                 write_file.write(str(action[0]) + "\t" + " ".join(map(str,action[1])) + "\n")
+        with open("Dump/"+args.experiment_title+"/" + args.heuristics + "sRULE","w",encoding="utf-8",newline="\n") as write_file:
+
+            for i in range(len(reordered_rulelist)):
+                if reordered_rulelist[i].evaluate == "Accept":
+                    write_file.write("Accept\t"+reordered_rulelist[i].bit_string+"\n")
+                elif reordered_rulelist[i].evaluate == "Deny":
+                    write_file.write("Deny\t"+reordered_rulelist[i].bit_string+"\n")
 
 
     if args.sample_number == None:

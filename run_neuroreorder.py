@@ -136,7 +136,8 @@ def main():
     # 学習試行
     train_env = SubprocVecEnv([lambda: env for i in range(args.num_env)])
     model = PPO2('MlpLstmPolicy',train_env,verbose=1,tensorboard_log=log_dir,
-    n_steps=8,
+    n_steps=16,
+    nminibatches=12,
     learning_rate=0.025,
     gamma=0.95)
     model.learn(total_timesteps = args.max_steps)

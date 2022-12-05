@@ -121,6 +121,12 @@ class rulemodel_env(gym.core.Env):
         elif action == 2:
             chosed_nodes = self.calc_graph.simple_weight_choose()
             self.action_group.append(("SWC",[chosed_nodes]))
+        # 3 -> Reversed SGM
+        elif action == 3:
+            chosed_nodes = self.calc_graph.single__reversing_sub_graph_mergine()
+            self.action_group.append(("RSGM",[chosed_nodes]))
+
+
         # 3 -> Auxiliary Hikage
         #elif action == 3:
         #    chosed_nodes = self.calc_graph.auxiliary_hikage()

@@ -199,7 +199,7 @@ class DependencyGraphModel:
         return (sum_of_weight,keys)
 
     #=======================================================
-    # Gの重み平均一覧から対象のGを選択しreturn
+    # Gの重み平均一覧から最大の要素を選択しreturn
     #=======================================================
     # debugをTrueにすると、各Gの重み平均と選択したGを出力
     def decide_choice(self,keys):
@@ -239,6 +239,79 @@ class DependencyGraphModel:
                 self.add_node_to_nodelist(self.sgms_reordered_nodelist,choice)
                 return choice
         return
+
+#=================================================================================
+#=-------------------------------------------------------------------------------=
+#                                 逆SGM用のサブ関数
+#=-------------------------------------------------------------------------------=
+#=================================================================================
+    #=========================================
+    # 逆到達可能な部分グラフの重み平均を導出
+    #=========================================
+    # sink -> 部分木の根
+    def reversing_sum_of_weight_in_subgraph(self,sink):
+
+        sum_of_weight = 0
+        
+        complete_queue = []
+        queue = []
+        queue.append(sink)
+
+        while(len(queue) > 0):
+            chosen_node = queue.pop()
+            complete_queue.append(chosen_node)
+            for element in [x for x in self.calculate_graph.pred[chosen_node] if not x in complete_queue]:
+                queue.append(element)
+
+        keys = complete_queue
+
+        for key in keys:
+            sum_of_weight += self.rule_list[key-1]._weight
+            
+            
+        return (sum_of_weight,keys)
+
+    #=======================================================
+    # Gの重み平均一覧から最小の要素を選択しreturn
+    #=======================================================
+    def decide_choice_minimum(self,keys):
+        _min = 99999999
+        return_key = -1
+        is_all_weight_is_zero = True
+        for i in keys:
+            ret = self.reversing_sum_of_weight_in_subgraph(i)
+
+            ave = ret[0] / len(ret[1])
+            if ave < _min:
+                _min = ave
+                return_key = i
+                is_all_weight_is_zero = False
+
+        #キーの重みがすべて0の場合は先頭の要素を選択
+        if is_all_weight_is_zero:
+            return keys[0]
+        return return_key
+
+    #=================================================================================
+    #=-------------------------------------------------------------------------------=
+    #                                 逆SGMを１回だけ実行
+    #=-------------------------------------------------------------------------------=
+    #=================================================================================
+    def single__reversing_sub_graph_mergine(self):
+
+        _next = list(self.calculate_graph.nodes)
+
+        while True:
+            # 到達可能ノード一覧から導出した部分グラフ一覧を基にノードを選択
+            choice = self.decide_choice_minimum(_next)
+            # そのノードから到達可能なノードを列挙(自身は含まない)
+            _next = list(self.calculate_graph.pred[choice])
+            # 到達可能ノードが無いならそのノードがSGMで選択されるノード
+            if len(_next) <= 0:
+                self.add_node_to_nodelist(self.hikages_reordered_nodelist,choice)
+                return choice
+        return
+
 
 #=================================================================================
 #=-------------------------------------------------------------------------------=

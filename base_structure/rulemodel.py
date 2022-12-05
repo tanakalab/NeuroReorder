@@ -273,14 +273,14 @@ class RuleList:
     #     -> destination 移動先の添字番号
     # 返り値 -> 成功したかどうか (True or False)
     # destinationにあるルールを押し下げ，その位置にルールを配置する．従属関係を保つことが前提．
-    def action_move(self,rule_pos,destination):
+    def action_move(self,rule_pos,destination,check_dependency=False):
         x = self.rule_list[rule_pos]
-
-        for i in range(destination,rule_pos):
-            #print("%d %d"%(destination,i))
-            if self.rule_list[rule_pos].is_dependent(self.rule_list[i]):
-                #print("従属関係が破壊されました")
-                return False
+        if check_dependency:
+            for i in range(destination,rule_pos):
+                #print("%d %d"%(destination,i))
+                if self.rule_list[rule_pos].is_dependent(self.rule_list[i]):
+                    #print("従属関係が破壊されました")
+                    return False
 
 
         del self.rule_list[rule_pos]

@@ -81,6 +81,9 @@ if __name__ == "__main__":
         elif args.heuristics == "Hikage":
             chosed_nodes = graph.single__hikage_method()
             action_group.append(("Hikage",chosed_nodes))
+        elif args.heuristics == "RSGM":
+            chosed_nodes = graph.single__reversing_sub_graph_mergine()
+            action_group.append(("RSGM",[chosed_nodes]))
         else:
             AssertionError("発見的解法指定エラー")
 
@@ -99,7 +102,7 @@ if __name__ == "__main__":
         print("遅延："+str(reordered_latency))
         exit()
 
-    if args.heuristics in ["SGM","Hikage"]:
+    if args.heuristics in ["SGM","Hikage","RSGM"]:
         with open("Dump/"+args.experiment_title+"/" + args.heuristics + "sACTIONLIST","w",encoding="utf-8",newline="\n") as write_file:
             for action in action_group:
                 write_file.write(str(action[0]) + "\t" + " ".join(map(str,action[1])) + "\n")

@@ -100,6 +100,7 @@ def main():
     # 学習ステップ数
     max_all_steps = args.max_steps
 
+
     # 追加オプションの初期設定
     additional_options = {
         "reward_formula":Reward_Formula.filter,     # 報酬設計
@@ -136,10 +137,10 @@ def main():
     # 学習試行
     train_env = SubprocVecEnv([lambda: env for i in range(args.num_env)])
     model = PPO2('MlpLstmPolicy',train_env,verbose=1,tensorboard_log=log_dir,
-    n_steps=16,
+    n_steps=8,
     nminibatches=12,
     learning_rate=0.025,
-    gamma=0.95)
+    gamma=0.975)
     model.learn(total_timesteps = args.max_steps)
     train_env.close()
 

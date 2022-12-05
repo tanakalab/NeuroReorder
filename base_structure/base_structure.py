@@ -15,6 +15,7 @@ class Implemented_Action(Enum):
     SGM = 0
     Hikage = 1
     SimpleWeightChoose = 2
+    RSGM = 3
     #AuxiliaryHikage = 3
 
     def __len__(self):

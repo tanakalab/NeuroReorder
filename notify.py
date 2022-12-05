@@ -9,6 +9,7 @@
 # 基本ライブラリ
 import requests
 import argparse
+import socket
 
 
 parser = argparse.ArgumentParser()
@@ -29,6 +30,8 @@ parser.add_argument(
 def main():
     args = parser.parse_args()
 
+    host_name = socket.gethostname()
+
     if args.tag == "start":
         tag_msg = "]を開始しました。"
     elif args.tag == "end":
@@ -42,7 +45,7 @@ def main():
     url = "https://notify-api.line.me/api/notify"
     headers = {"Authorization": f'Bearer {token}'}
     
-    message = "実験[" + args.experiment_title + tag_msg
+    message = "実験機{"+ host_name +"}にて実験[" + args.experiment_title + tag_msg
 
     data = {'message' : message}
     r = requests.post(url,headers=headers,data=data)

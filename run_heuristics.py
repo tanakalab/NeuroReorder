@@ -107,10 +107,10 @@ if __name__ == "__main__":
     if args.heuristics in ["SGM","Hikage","RSGM"]:
         
         
-        with open("Dump/"+experiment_title+"/" + args.heuristics + "sACTIONLIST","w",encoding="utf-8",newline="\n") as write_file:
+        with open("Dump/"+experiment_title+"/" + args.heuristics + "_HeuristicsACTIONLIST","w",encoding="utf-8",newline="\n") as write_file:
             for action in action_group:
                 write_file.write(str(action[0]) + "\t" + " ".join(map(str,action[1])) + "\n")
-        with open("Dump/"+experiment_title+"/" + args.heuristics + "sRULE","w",encoding="utf-8",newline="\n") as write_file:
+        with open("Dump/"+experiment_title+"/" + args.heuristics + "_HeuristicsRULE","w",encoding="utf-8",newline="\n") as write_file:
 
             for i in range(len(reordered_rulelist)):
                 if reordered_rulelist[i].evaluate == "Accept":

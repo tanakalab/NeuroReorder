@@ -20,6 +20,7 @@ counter=1
 
 while [ $counter -le $2 ]
 do
+	mkdir Dump/$1/sample$counter
 	echo "サンプル $counter 処理開始"
 	python3 run_heuristics.py Datas/$1/Rule/sample$counter SGM --packets=Datas/$1/Packet/sample$counter --experiment_title=$1 --sample_number=$counter
 	python3 run_heuristics.py Datas/$1/Rule/sample$counter Hikage --packets=Datas/$1/Packet/sample$counter --experiment_title=$1 --sample_number=$counter

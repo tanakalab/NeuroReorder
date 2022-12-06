@@ -130,7 +130,7 @@ def main():
     # tensorboard用ログフォルダ作成
     log_dir = 'Dump/'+args.experiment_title
     if args.sample_number != None:
-        log_dir = 'Dump/sample' + str(args.sample_number)
+        log_dir = 'Dump/' + args.experiment_title +'/sample' + str(args.sample_number)
         os.makedirs(log_dir,exist_ok=True)
 
 

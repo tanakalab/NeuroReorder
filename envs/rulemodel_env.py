@@ -208,7 +208,7 @@ class rulemodel_env(gym.core.Env):
         
 
         # ルールリストを出力
-        experiment_title = self.experiment_title if self.additional_options['sample_number'] is None else "sample"+str(self.additional_options['sample_number'])
+        experiment_title = self.experiment_title if self.additional_options['sample_number'] is None else self.experiment_title + "/sample"+str(self.additional_options['sample_number'])
 
         # 現在の最小値より大きい場合は出力しない(並列処理中に各プロセス間で最小値を共有できないのでフォルダ検索して確認)
         print([int(x.split('/')[-1].split('\\')[-1].split('s')[0]) for x in glob.glob("Dump/" + experiment_title + "/*sRULE")])

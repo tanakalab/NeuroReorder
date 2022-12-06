@@ -102,11 +102,15 @@ if __name__ == "__main__":
         print("遅延："+str(reordered_latency))
         exit()
 
+    experiment_title = args.experiment_title if args.sample_number is None else args.experiment_title + "/sample"+str(args.sample_number)
+
     if args.heuristics in ["SGM","Hikage","RSGM"]:
-        with open("Dump/"+args.experiment_title+"/" + args.heuristics + "sACTIONLIST","w",encoding="utf-8",newline="\n") as write_file:
+        
+        
+        with open("Dump/"+experiment_title+"/" + args.heuristics + "sACTIONLIST","w",encoding="utf-8",newline="\n") as write_file:
             for action in action_group:
                 write_file.write(str(action[0]) + "\t" + " ".join(map(str,action[1])) + "\n")
-        with open("Dump/"+args.experiment_title+"/" + args.heuristics + "sRULE","w",encoding="utf-8",newline="\n") as write_file:
+        with open("Dump/"+experiment_title+"/" + args.heuristics + "sRULE","w",encoding="utf-8",newline="\n") as write_file:
 
             for i in range(len(reordered_rulelist)):
                 if reordered_rulelist[i].evaluate == "Accept":

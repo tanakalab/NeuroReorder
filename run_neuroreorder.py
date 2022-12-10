@@ -151,9 +151,8 @@ def main():
 
     position = 'B' + str(1+args.sample_number)
     # 出力されたファイル群から遅延の最小値を取得
-    minimum_latency = min([x.split('/')[-1].split('\\')[-1].split('s')[0] for x in glob.glob("Dump/sample" + str(args.sample_number) + "/*sRULE")])
-
-
+    minimum_latency = min([x.split('/')[-1].split('\\')[-1].split('s')[0] for x in glob.glob("Dump/" + args.experiment_title + "/sample" + str(args.sample_number) + "/*sRULE")])
+    
     ExcelController.write_result_to_excel(args.experiment_title,position,minimum_latency)
     print("EXCELにNeuroReorderサンプル"+str(args.sample_number)+"の結果値を書き込みました.")
 

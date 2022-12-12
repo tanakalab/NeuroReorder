@@ -137,6 +137,7 @@ if __name__ == "__main__":
         print("Hikage Percentage : %8f"%(len([sgm[0] for sgm in action_list if sgm[0] == "Hikage"])/ len(action_list)))
         print("SWC    Percentage : %8f"%(len([sgm[0] for sgm in action_list if sgm[0] == "SWC"])/ len(action_list)))
         print("AuxHKG Percentage : %8f"%(len([sgm[0] for sgm in action_list if sgm[0] == "AuxHKG"])/ len(action_list)))
+        print("RSGM   Percentage : %8f"%(len([sgm[0] for sgm in action_list if sgm[0] == "RSGM"])/ len(action_list)))
 
 
         

@@ -73,6 +73,9 @@ class Rule:
     def is_overlap(self,rule):
         assert len(self.bit_string) == len(rule.bit_string),"入力されたルールのbit列の長さが異なります."
         for i in range(len(self.bit_string)):
+            #print(self.bit_string,rule.bit_string,end="")
+            #print("     ",end="")
+            #print(self.bit_string[i],rule.bit_string[i])
             if self.bit_string[i] != "*" and rule.bit_string[i] != "*":
                 if self.bit_string[i] != rule.bit_string[i]:
                     return False
@@ -273,22 +276,40 @@ class RuleList:
     #     -> destination 移動先の添字番号
     # 返り値 -> 成功したかどうか (True or False)
     # destinationにあるルールを押し下げ，その位置にルールを配置する．従属関係を保つことが前提．
-    def action_move(self,rule_pos,destination,check_dependency=False):
-        x = self.rule_list[rule_pos]
+
+    def action_moveOne(self,rule_pos,check_dependency):
+        x = self.rule_list[rule_pos+1]
+        
         if check_dependency:
-            for i in range(destination,rule_pos):
-                #print("%d %d"%(destination,i))
+            #print("ルール" + str(rule_pos)+ "(" + self.rule_list[rule_pos].bit_string + "," + self.rule_list[rule_pos].evaluate +")とルール" + str(rule_pos+1)+ "(" + self.rule_list[rule_pos+1].bit_string + "," + self.rule_list[rule_pos+1].evaluate +")")
+            if self.rule_list[rule_pos].is_dependent(self.rule_list[rule_pos+1]):
+                #print("従属していて移動できない")
+                return False
+        del self.rule_list[rule_pos+1]
+        self.rule_list.insert(rule_pos,x)
+
+        #print("移動おわた")
+        return True
+
+
+    def action_move(self,rule_pos,destination,check_dependency):
+        x = self.rule_list[rule_pos]
+        #print("移動中")
+        if check_dependency:
+            for i in range(rule_pos+1,destination+1):
+                #print("ルール" + str(rule_pos)+ "(" + self.rule_list[rule_pos].bit_string + "," + self.rule_list[rule_pos].evaluate +")とルール" + str(i)+ "(" + self.rule_list[i].bit_string + "," + self.rule_list[i].evaluate +")")
                 if self.rule_list[rule_pos].is_dependent(self.rule_list[i]):
-                    #print("従属関係が破壊されました")
+                    #print("従属していて移動できない")
                     return False
 
 
         del self.rule_list[rule_pos]
 
         if rule_pos < destination:
-            self.rule_list.insert(destination-1,x)
+            self.rule_list.insert(destination-2,x)
         else:
             self.rule_list.insert(destination,x)
+        #print("移動おわた")
         return True
 
     #====================================

@@ -139,7 +139,7 @@ def main():
     model = PPO2('MlpLstmPolicy',train_env,verbose=1,tensorboard_log=log_dir,
     n_steps=8,
     nminibatches=12,
-    learning_rate=0.025,
+    learning_rate=0.00001,
     gamma=0.975)
     model.learn(total_timesteps = args.max_steps)
     train_env.close()

@@ -68,12 +68,13 @@ def update(i,graph_title,action_list,node_initial_pos,graph):
         graph.graph.remove_nodes_from(action_list[j][1])
 
     node_size = [node["size"]*10 for node in graph.graph.nodes.values()]
-    node_color = [node["color"] for node in graph.graph.nodes.values()]
-    edge_color = [edge["color"] for edge in graph.graph.edges.values()]
 
-    #node_initial_pos = nx.nx_pydot.pydot_layout(graph.graph,prog='dot')
-    nx.draw_networkx(graph.graph,pos=node_initial_pos,edge_color=edge_color,node_color=node_color,node_size=node_size,font_size=1)
-    plt.title(action_list[i][0])
+    nx.draw_networkx(graph.graph,pos=node_initial_pos,node_color="white",node_size=node_size,width=0.25,arrowsize=3,edgecolors="black",with_labels=False)
+    
+    if action_list[i][0] == "SWC":
+        plt.title("CRS")
+    else:
+        plt.title(action_list[i][0])
 
 
 # ------------------------------------------------------------------
@@ -94,18 +95,19 @@ if __name__ == "__main__":
     # グラフ構築のテスト
 
     graph = DependencyGraphModel(rule_list)
-
-    fig, ax = plt.subplots(1, 1, figsize=(args.figsize, args.figsize))
     pos = nx.nx_pydot.pydot_layout(graph.graph,prog='dot')
+    
+    fig, ax = plt.subplots(1, 1, figsize=(args.figsize, args.figsize))
     # フレームの軸を固定
     array_pos = np.array(list(pos.values()))
     max_xy, min_xy = np.max(array_pos, axis=0), np.min(array_pos, axis=0)
     range_x, range_y = max_xy[0] - min_xy[0], max_xy[1] - min_xy[1]
     xlim = [min_xy[0] - range_x*0.05, max_xy[0] + range_x*0.05]
     ylim = [min_xy[1] - range_y*0.05, max_xy[1] + range_y*0.05]
+    
 
-
-    if args.actions == None:
+    if args.actions == None:    
+        plt.figure(figsize=(1,1))
         while len(graph.removed_nodelist) < len(list(graph.graph.nodes)):
             chosen_algorithm = input("使用アルゴリズム(SGMの\"s\"または日景の\"h\"):")
             if chosen_algorithm == "s":
@@ -113,42 +115,54 @@ if __name__ == "__main__":
             elif chosen_algorithm == "h":
                 print(graph.single__hikage_method())
             elif chosen_algorithm == "w":
-                graph.simple_weight_choose()
+                print(graph.simple_weight_choose())
+            elif chosen_algorithm == "r":
+                print(graph.single__reversing_sub_graph_mergine())
 
             graph.show()
-            #print("Ns = ",end="")
-            #print(graph.Ns)
-            """
-            subgraph_nodesets = graph.subgraph_nodesets(graph.calculate_graph)
-            subgraph_nodesets_w = graph.subgraph_nodesets(graph.calculate_graph)
-            for subgraph_nodeset in subgraph_nodesets_w:
-                for i in range(len(subgraph_nodeset)):
-                    subgraph_nodeset[i] = graph.rule_list[subgraph_nodeset[i]-1]._weight
-            print(graph.alignment_subgraph_nodesets(subgraph_nodesets,subgraph_nodesets_w,graph.calculate_graph))
-            """
-            #print("\t",end="")
-            #print(graph.nodepositions_inNs.items())
+            
         graph.complete()
         exit()
 
     else:
-
+        
         print("SGM    Percentage : %8f"%(len([sgm[0] for sgm in action_list if sgm[0] == "SGM"])/ len(action_list)))
         print("Hikage Percentage : %8f"%(len([sgm[0] for sgm in action_list if sgm[0] == "Hikage"])/ len(action_list)))
         print("SWC    Percentage : %8f"%(len([sgm[0] for sgm in action_list if sgm[0] == "SWC"])/ len(action_list)))
         print("AuxHKG Percentage : %8f"%(len([sgm[0] for sgm in action_list if sgm[0] == "AuxHKG"])/ len(action_list)))
         print("RSGM   Percentage : %8f"%(len([sgm[0] for sgm in action_list if sgm[0] == "RSGM"])/ len(action_list)))
 
-
-        
-
-
         if not args.dump_movie:
             exit()
 
-    
-
         print("START MP4 CREATE")
+        """
+        # 1フレームごとにepsを出したりしたい場合はここからコメントアウト
 
-        ani = animation.FuncAnimation(fig,update,init_func=init_func,fargs = ("GRAPH",action_list,pos,graph),interval=300,frames=len(action_list))
+        plt.figure(figsize=(args.figsize,args.figsize))
+
+        # 実験結果まとめフォルダ作成
+        os.makedirs('Dump/ActProceeds',exist_ok=True)
+        for i in range(len(action_list)):
+            plt.cla()
+            plt.xlim(xlim[0],xlim[1])
+            plt.ylim(ylim[0],ylim[1])
+            plt.gca().spines['right'].set_visible(False)
+            plt.gca().spines['left'].set_visible(False)
+            plt.gca().spines['top'].set_visible(False)
+            plt.gca().spines['bottom'].set_visible(False)
+            plt.subplots_adjust(left=0, right=1, bottom=0, top=1)
+            for j in range(i):
+                graph.graph.remove_nodes_from(action_list[j][1])
+
+            node_size = [node["size"]*10 for node in graph.graph.nodes.values()]            
+            nx.draw_networkx(graph.graph,pos=pos,node_color="white",node_size=node_size,width=0.25,arrowsize=3,edgecolors="black",with_labels=False)
+            plt.title(action_list[i][0])
+            plt.savefig("Dump/ActProceeds/" +  '{:0=10}'.format(i) + ".eps")
+        # ここまで
+        """
+
+        # 動画で出したい場合はここからコメントアウト
+        ani = animation.FuncAnimation(fig,update,init_func=init_func,fargs = ("GRAPH",action_list,pos,graph),interval=50,frames=len(action_list))
         ani.save("Dump/Process.mp4",writer='ffmpeg')
+        # ここまで

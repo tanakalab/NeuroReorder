@@ -79,16 +79,6 @@ class ExcelController:
 
         return sheet[position].value is not None
 
-
-
-
-
-
-
-
-
-
-
 class BS:
     #=========================================
     # ファイル名からルールリストの構造を構築する

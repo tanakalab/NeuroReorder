@@ -98,15 +98,15 @@ class DependencyGraphModel:
         pos = nx.nx_pydot.pydot_layout(self.graph,prog='dot')
         # 出力設定に応じた処理
         if dump_type == "caption":
-            nx.draw_networkx(self.graph,pos,node_color="white",node_size=1000,linewidths=1.0,edgecolors="black")
-            # 枠線の除去
+            nx.draw_networkx(self.graph,pos,node_color="white",node_size=node_size,width=0.25,arrowsize=3,edgecolors="black",with_labels=False)
+            # 枠線の除去 8
             plt.gca().spines['right'].set_visible(False)
             plt.gca().spines['left'].set_visible(False)
             plt.gca().spines['top'].set_visible(False)
             plt.gca().spines['bottom'].set_visible(False)
         else:
             nx.draw_networkx(self.graph,pos,edge_color=edge_color,node_color=node_color,node_size=node_size,font_size=1)
-
+        plt.subplots_adjust(left=0, right=1, bottom=0, top=1)
         # 出力
         plt.savefig(file_name)
 
@@ -353,31 +353,20 @@ class DependencyGraphModel:
 
         for subgraph_nodeset in subgraph_nodesets:
             N = []
-            appended_list = []
             # 入次数0のノードを計算
-            matchedlist = [i for i in subgraph_nodeset if len(list(copied_graph.pred[i])) == 0]
-            N.append(matchedlist)
+            while(len(subgraph_nodeset) > 0):
+                preds = [i for i in subgraph_nodeset if len(list(copied_graph.pred[i])) == 0]
+                preds_weightList = [self.rule_list[i-1]._weight for i in preds]
+                target = (preds[preds_weightList.index(min(preds_weightList))],min(preds_weightList))
+                N.append(target)
+                copied_graph.remove_node(target[0])
+                subgraph_nodeset.remove(target[0])
 
-            appended_list += matchedlist
-            for element in matchedlist:
-                subgraph_nodeset.remove(element)
-
-            # 入次数1以上のノードを計算
-            while(len([x for x in subgraph_nodeset if not x in appended_list]) > 0):
-                matchedlist = [x for x in subgraph_nodeset if len([i for i in list(copied_graph.pred[x]) if not i in appended_list]) == 0 and not x in appended_list]
-                N.append(matchedlist)
-                appended_list += matchedlist
-
-            # 重みを付加したタプルにし、並べ替え
-            for i in range(len(N)):
-                for j in range(len(N[i])):
-                    N[i][j] = (N[i][j],self.rule_list[N[i][j]-1]._weight)
-                N[i].sort(key=lambda x:x[1])
-                N[i].reverse()
-            # ネストを展開し、Nsに追加
             N.reverse()
-            N = [element for set in N for element in set]
             Ns.append(N)
+
+        #print("Ns = ",end="")
+        #print(Ns)
 
         return Ns
 
@@ -385,11 +374,12 @@ class DependencyGraphModel:
     #=======================================================
     # Nsを構築し、返す
     #=======================================================
-    def create_Ns(self,calculate_graph):
+    def create_Ns(self):
+        copied_graph = self.copied_graph()
         # 連結成分へ分解
-        subgraph_nodesets = self.subgraph_nodesets(calculate_graph)
+        subgraph_nodesets = self.subgraph_nodesets(copied_graph)
         # 整列
-        Ns = self.alignment_subgraph_nodesets(subgraph_nodesets,calculate_graph)
+        Ns = self.alignment_subgraph_nodesets(subgraph_nodesets,copied_graph)
         return Ns
 
     #=======================================================
@@ -398,7 +388,7 @@ class DependencyGraphModel:
     #=======================================================
     def prepare_hikage_method(self):
 
-        self.Ns = self.create_Ns(self.calculate_graph)
+        self.Ns = self.create_Ns()
         # すべてのノードのN上の位置を示す辞書
         self.nodepositions_inNs = dict()
         # 辞書に位置情報を追加
@@ -440,8 +430,7 @@ class DependencyGraphModel:
         #####################################################
         ###      Nsとそれに対応する重みリストWsを計算      ###
         #####################################################
-        # Ns = self.Ns
-        Ns = self.create_Ns(self.calculate_graph)
+        Ns = self.Ns
 
         ### Wを計算する
         Ws = []
@@ -451,6 +440,11 @@ class DependencyGraphModel:
                 w.append(sum([N[j][1] for j in reversed(range(i,len(N)))]) / (len(N)-i))
             w.reverse()
             Ws.append(w)
+
+        print("Ns = ",end="")
+        print(Ns)
+        print("Ws = ",end="")
+        print(Ws)
 
         #####################################################
         ### 整列済みリストへ挿入するリストの先端位置の決定 ###
@@ -499,7 +493,7 @@ class DependencyGraphModel:
             if len(list(self.calculate_graph.succ[node])) == 0:
                 weight_list.append((self.rule_list[node-1]._weight,node))
 
-        max_weight = max(weight_list)
+        max_weight = min(weight_list)
 
         self.add_node_to_nodelist(self.sgms_reordered_nodelist,max_weight[1])
         return max_weight[1]
